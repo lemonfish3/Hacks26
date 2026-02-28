@@ -179,8 +179,11 @@ export const AvatarPreview = () => {
             {/* CTA Button */}
             <Link
               to="/signup"
-              className="w-full py-4 rounded-2xl font-semibold text-white text-center transition-all duration-200 block hover:shadow-lg hover:scale-105 active:scale-95"
-              style={{ background: cloudyColors.deep }}
+              className="w-full py-4 rounded-2xl font-semibold text-white text-center transition-all duration-200 inline-block hover:shadow-lg hover:opacity-90 active:scale-95 cursor-pointer"
+              style={{ 
+                background: cloudyColors.deep,
+                display: 'block',
+              }}
             >
               Save & Enter Lobby →
             </Link>

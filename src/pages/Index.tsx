@@ -10,16 +10,9 @@ const Index = () => {
   const { user } = useStudyMate();
 
   const handleExploreClick = () => {
-    const lobbySection = document.querySelector("#lobby");
-    if (lobbySection) {
-      lobbySection.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  const handleCreateClick = () => {
-    const avatarSection = document.querySelector("#avatar");
-    if (avatarSection) {
-      avatarSection.scrollIntoView({ behavior: "smooth" });
+    const roomsSection = document.querySelector("#rooms");
+    if (roomsSection) {
+      roomsSection.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -30,7 +23,7 @@ const Index = () => {
 
       {/* Hero Section */}
       <div style={{ paddingTop: "66px" }}>
-        <HeroSection onExploreClick={handleExploreClick} onCreateClick={handleCreateClick} />
+        <HeroSection onExploreClick={handleExploreClick} />
       </div>
 
       {/* How It Works Section */}

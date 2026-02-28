@@ -4,7 +4,6 @@ import { cloudyColors } from "@/lib/theme";
 
 interface HeroSectionProps {
   onExploreClick?: () => void;
-  onCreateClick?: () => void;
 }
 
 const CloudShape = ({ delay, size, position }: { delay: number; size: string; position: string }) => {
@@ -32,7 +31,7 @@ const CloudShape = ({ delay, size, position }: { delay: number; size: string; po
   );
 };
 
-export const HeroSection = ({ onExploreClick, onCreateClick }: HeroSectionProps) => {
+export const HeroSection = ({ onExploreClick }: HeroSectionProps) => {
   return (
     <section
       className="relative min-h-screen flex flex-col items-center justify-center px-6 md:px-12 py-20 overflow-hidden"
@@ -112,7 +111,7 @@ export const HeroSection = ({ onExploreClick, onCreateClick }: HeroSectionProps)
           </button>
           <Link
             to="/signup"
-            className="px-9 py-4 rounded-full font-semibold transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95 border"
+            className="inline-block px-9 py-4 rounded-full font-semibold transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95 border cursor-pointer"
             style={{
               background: "rgba(255, 255, 255, 0.8)",
               color: cloudyColors.deep,
