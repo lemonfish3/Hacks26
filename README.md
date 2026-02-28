@@ -1,4 +1,4 @@
-# CozyRooms
+# CozyMatch
 
 ## Project info
 
