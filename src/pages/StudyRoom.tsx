@@ -1,18 +1,43 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Mic, MicOff, LogOut, Shuffle, MessageCircle } from "lucide-react";
+import { useStudyMate } from "@/context/StudyMateContext";
+import type { UserProfile } from "@/context/StudyMateContext";
 
 const AVATARS = ["🐱", "🐻", "🐰", "🦊", "🐼", "🐸", "🦉", "🐧"];
 const REACTIONS = ["📖", "😴", "💪", "🤔", "✍️", "☕", "🎯", "😊"];
 const DURATIONS = [30, 45, 60];
 
+/** Mock pool of potential study buddies with gender for preference-based matching */
+const MOCK_PARTNERS: { name: string; avatar: string; gender: UserProfile["gender"] }[] = [
+  { name: "Jordan", avatar: "🐱", gender: "female" },
+  { name: "Sam", avatar: "🐻", gender: "male" },
+  { name: "Alex", avatar: "🐰", gender: "non_binary" },
+  { name: "Riley", avatar: "🦊", gender: "female" },
+  { name: "Casey", avatar: "🐼", gender: "male" },
+  { name: "Morgan", avatar: "🐸", gender: "female" },
+  { name: "Quinn", avatar: "🦉", gender: "male" },
+  { name: "Avery", avatar: "🐧", gender: "female" },
+];
+
+function pickPartnerByPreference(preference: UserProfile["preferences"]["buddyGender"]) {
+  const filtered =
+    preference === "any"
+      ? MOCK_PARTNERS
+      : MOCK_PARTNERS.filter((p) => p.gender === preference);
+  const pool = filtered.length > 0 ? filtered : MOCK_PARTNERS;
+  return pool[Math.floor(Math.random() * pool.length)]!;
+}
+
 const StudyRoom = () => {
+  const { profile } = useStudyMate();
   const [sessionStarted, setSessionStarted] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState(30);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const [myAvatar, setMyAvatar] = useState("🐱");
-  const [partnerAvatar] = useState("🐻");
+  const [partner, setPartner] = useState<{ name: string; avatar: string } | null>(null);
   const [myReaction, setMyReaction] = useState("📖");
   const [partnerReaction] = useState("✍️");
   const [showReactions, setShowReactions] = useState(false);
@@ -20,13 +45,17 @@ const StudyRoom = () => {
   const [isMatching, setIsMatching] = useState(false);
 
   const startSession = useCallback(() => {
+    if (!profile) return;
     setIsMatching(true);
+    setPartner(null);
     setTimeout(() => {
+      const matched = pickPartnerByPreference(profile.preferences.buddyGender);
+      setPartner({ name: matched.name, avatar: matched.avatar });
       setIsMatching(false);
       setSessionStarted(true);
       setTimeLeft(selectedDuration * 60);
     }, 2500);
-  }, [selectedDuration]);
+  }, [selectedDuration, profile]);
 
   const endSession = () => {
     setSessionStarted(false);
@@ -79,10 +108,10 @@ const StudyRoom = () => {
       <div className="min-h-screen bg-background flex flex-col">
         {/* Nav */}
         <nav className="flex items-center justify-between px-6 py-5">
-          <a href="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl">☁️</span>
             <span className="text-xl font-bold text-foreground">StudyMate</span>
-          </a>
+          </Link>
         </nav>
 
         <div className="flex-1 flex flex-col items-center justify-center px-6 pb-16">
@@ -152,10 +181,10 @@ const StudyRoom = () => {
     <div className="min-h-screen bg-background flex flex-col relative">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 md:px-6 py-4">
-        <a href="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <span className="text-xl">☁️</span>
           <span className="text-lg font-bold text-foreground">StudyMate</span>
-        </a>
+        </Link>
 
         {/* Timer */}
         <div className="flex items-center gap-3">
@@ -244,13 +273,15 @@ const StudyRoom = () => {
           >
             <div className="relative">
               <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-card border-2 border-border flex items-center justify-center text-5xl md:text-6xl cloud-shadow breathing" style={{ animationDelay: "1.5s" }}>
-                {partnerAvatar}
+                {partner?.avatar ?? "🐻"}
               </div>
               <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-sm">
                 {partnerReaction}
               </div>
             </div>
-            <span className="text-sm font-semibold text-foreground">Study Buddy</span>
+            <span className="text-sm font-semibold text-foreground">
+              {partner?.name ?? "Study Buddy"}
+            </span>
           </motion.div>
         </div>
 

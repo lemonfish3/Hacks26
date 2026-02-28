@@ -1,4 +1,6 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { useStudyMate } from "@/context/StudyMateContext";
 
 const CloudDecoration = ({ className = "" }: { className?: string }) => (
   <svg viewBox="0 0 200 100" className={className} fill="hsl(200, 50%, 98%)">
@@ -33,6 +35,8 @@ const features = [
 ];
 
 const Index = () => {
+  const { user, profile } = useStudyMate();
+
   return (
     <div className="min-h-screen bg-background overflow-hidden relative">
       {/* Floating clouds */}
@@ -47,12 +51,28 @@ const Index = () => {
           <span className="text-xl font-bold text-foreground">StudyMate</span>
         </div>
         <div className="flex items-center gap-3">
-          <a
-            href="/study"
-            className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
-          >
-            Start Studying
-          </a>
+          {!user ? (
+            <Link
+              to="/login"
+              className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
+            >
+              Get started
+            </Link>
+          ) : !profile ? (
+            <Link
+              to="/profile"
+              className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
+            >
+              Complete profile
+            </Link>
+          ) : (
+            <Link
+              to="/study"
+              className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
+            >
+              Start Studying
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -97,12 +117,28 @@ const Index = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <a
-            href="/study"
-            className="px-8 py-3.5 rounded-full bg-primary text-primary-foreground font-bold text-base hover:opacity-90 transition-opacity cloud-shadow"
-          >
-            Find a Study Buddy
-          </a>
+          {!user ? (
+            <Link
+              to="/login"
+              className="px-8 py-3.5 rounded-full bg-primary text-primary-foreground font-bold text-base hover:opacity-90 transition-opacity cloud-shadow"
+            >
+              Find a Study Buddy
+            </Link>
+          ) : !profile ? (
+            <Link
+              to="/profile"
+              className="px-8 py-3.5 rounded-full bg-primary text-primary-foreground font-bold text-base hover:opacity-90 transition-opacity cloud-shadow"
+            >
+              Complete your profile
+            </Link>
+          ) : (
+            <Link
+              to="/study"
+              className="px-8 py-3.5 rounded-full bg-primary text-primary-foreground font-bold text-base hover:opacity-90 transition-opacity cloud-shadow"
+            >
+              Find a Study Buddy
+            </Link>
+          )}
           <a
             href="#features"
             className="px-8 py-3.5 rounded-full bg-card text-foreground font-semibold text-base border border-border hover:bg-secondary transition-colors"
