@@ -16,7 +16,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 
 type Step = "email" | "verify";
 
-const Login = () => {
+const SignUp = () => {
   const navigate = useNavigate();
   const { user, setUser } = useStudyMate();
   const [step, setStep] = useState<Step>("email");
@@ -49,8 +49,7 @@ const Login = () => {
       email: email.trim().toLowerCase(),
       verifiedAt: Date.now(),
     });
-    const hasProfile = !!localStorage.getItem("studymate_profile");
-    navigate(hasProfile ? "/" : "/profile");
+    navigate("/profile");
   };
 
   useEffect(() => {
@@ -67,19 +66,19 @@ const Login = () => {
           <span className="text-xl font-bold text-foreground">StudyMate</span>
         </Link>
         <Link
-          to="/signup"
+          to="/login"
           className="text-sm font-medium text-muted-foreground hover:text-foreground"
         >
-          Sign up
+          Log in
         </Link>
       </nav>
 
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <Card className="w-full max-w-md border-border cloud-shadow">
           <CardHeader>
-            <CardTitle>Log in</CardTitle>
+            <CardTitle>Sign up</CardTitle>
             <CardDescription>
-              Enter your college or university email. We'll send a verification code.
+              Use your college or university email. We'll send a verification code.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -144,9 +143,9 @@ const Login = () => {
             )}
 
             <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link to="/signup" className="font-medium text-foreground hover:underline">
-                Sign up
+              Already have an account?{" "}
+              <Link to="/login" className="font-medium text-foreground hover:underline">
+                Log in
               </Link>
             </p>
             <Link
@@ -162,4 +161,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SignUp;

@@ -35,7 +35,7 @@ const features = [
 ];
 
 const Index = () => {
-  const { user, profile } = useStudyMate();
+  const { user, profile, logout } = useStudyMate();
 
   return (
     <div className="min-h-screen bg-background overflow-hidden relative">
@@ -44,7 +44,7 @@ const Index = () => {
       <CloudDecoration className="absolute top-32 right-[8%] w-36 opacity-30 float-animation-delayed" />
       <CloudDecoration className="absolute bottom-20 left-[15%] w-40 opacity-25 float-animation" />
 
-      {/* Nav */}
+      {/* Nav: Sign Up / Log In when logged out; Log Out (and Start Studying if has profile) when logged in */}
       <nav className="relative z-10 flex items-center justify-between px-6 md:px-12 py-5">
         <div className="flex items-center gap-2">
           <span className="text-2xl">☁️</span>
@@ -52,26 +52,38 @@ const Index = () => {
         </div>
         <div className="flex items-center gap-3">
           {!user ? (
-            <Link
-              to="/login"
-              className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
-            >
-              Get started
-            </Link>
-          ) : !profile ? (
-            <Link
-              to="/profile"
-              className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
-            >
-              Complete profile
-            </Link>
+            <>
+              <Link
+                to="/signup"
+                className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
+              >
+                Sign up
+              </Link>
+              <Link
+                to="/login"
+                className="px-5 py-2.5 rounded-full border border-border bg-background text-foreground font-semibold text-sm hover:bg-secondary transition-colors"
+              >
+                Log in
+              </Link>
+            </>
           ) : (
-            <Link
-              to="/study"
-              className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
-            >
-              Start Studying
-            </Link>
+            <>
+              {profile && (
+                <Link
+                  to="/study"
+                  className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
+                >
+                  Start Studying
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="px-5 py-2.5 rounded-full border border-border bg-background text-foreground font-semibold text-sm hover:bg-secondary transition-colors"
+              >
+                Log out
+              </button>
+            </>
           )}
         </div>
       </nav>
@@ -119,7 +131,7 @@ const Index = () => {
         >
           {!user ? (
             <Link
-              to="/login"
+              to="/signup"
               className="px-8 py-3.5 rounded-full bg-primary text-primary-foreground font-bold text-base hover:opacity-90 transition-opacity cloud-shadow"
             >
               Find a Study Buddy
