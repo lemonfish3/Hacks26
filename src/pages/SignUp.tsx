@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import { getSchoolEmailError } from "@/lib/schoolEmail";
+import { sendVerificationCode, verifyCode } from "@/lib/authApi";
 import { useStudyMate } from "@/context/StudyMateContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,9 +24,11 @@ const SignUp = () => {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const justVerified = useRef(false);
 
-  const handleSubmitEmail = (e: React.FormEvent) => {
+  const handleSubmitEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     const err = getSchoolEmailError(email);
@@ -33,15 +36,29 @@ const SignUp = () => {
       setError(err);
       return;
     }
+    setSending(true);
+    const result = await sendVerificationCode(email);
+    setSending(false);
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
     setStep("verify");
   };
 
-  const handleSubmitCode = (e: React.FormEvent) => {
+  const handleSubmitCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     const trimmed = code.replace(/\D/g, "").slice(0, 6);
     if (trimmed.length < 6) {
       setError("Please enter the 6-digit code we sent to your email.");
+      return;
+    }
+    setVerifying(true);
+    const result = await verifyCode(email, trimmed);
+    setVerifying(false);
+    if ("error" in result) {
+      setError(result.error);
       return;
     }
     justVerified.current = true;
@@ -99,8 +116,8 @@ const SignUp = () => {
                 {error && (
                   <p className="text-sm text-destructive">{error}</p>
                 )}
-                <Button type="submit" className="w-full">
-                  Send verification code
+                <Button type="submit" className="w-full" disabled={sending}>
+                  {sending ? "Sending…" : "Send verification code"}
                 </Button>
               </form>
             ) : (
@@ -124,8 +141,8 @@ const SignUp = () => {
                 {error && (
                   <p className="text-sm text-destructive text-center">{error}</p>
                 )}
-                <Button type="submit" className="w-full">
-                  Verify & continue
+                <Button type="submit" className="w-full" disabled={verifying}>
+                  {verifying ? "Verifying…" : "Verify & continue"}
                 </Button>
                 <Button
                   type="button"

@@ -36,6 +36,16 @@ npm i
 npm run dev
 ```
 
+## Email verification (optional)
+
+To send real verification codes to school emails:
+
+1. Copy `.env.example` to `.env` and add your [Resend](https://resend.com) API key.
+2. In a **second terminal**, run the API server: `npm run server` (listens on port 3001).
+3. With both `npm run dev` and `npm run server` running, Sign up / Log in will call the API; codes are sent via Resend.
+
+See [docs/EMAIL_AND_SSO_SETUP.md](docs/EMAIL_AND_SSO_SETUP.md) for Resend setup and **UCI SSO (Shibboleth + Duo)** integration.
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
