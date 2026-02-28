@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cloudyColors } from "@/lib/theme";
+import { useStudyMate } from "@/context/StudyMateContext";
 
 interface NavLink {
   label: string;
@@ -11,10 +12,11 @@ const navLinks: NavLink[] = [
   { label: "How it works", href: "#how" },
   { label: "Rooms", href: "#rooms" },
   { label: "Create Avatar", href: "#avatar" },
-  { label: "Study Lobby", href: "#lobby" },
 ];
 
 export const Navigation = () => {
+  const { user, profile, logout } = useStudyMate();
+
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith("#")) {
       e.preventDefault();
@@ -62,14 +64,50 @@ export const Navigation = () => {
         ))}
       </ul>
 
-      {/* CTA Button */}
-      <Link
-        to="/signup"
-        className="px-6 py-2 rounded-full font-semibold text-white text-sm transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95"
-        style={{ background: cloudyColors.deep }}
-      >
-        Join Free
-      </Link>
+      {/* CTA Buttons - Right side */}
+      <div className="flex items-center gap-2">
+        {!user ? (
+          <>
+            <Link
+              to="/login"
+              className="px-6 py-2 rounded-full font-semibold text-sm transition-all duration-200"
+              style={{
+                color: cloudyColors.textSoft,
+              }}
+            >
+              Log in
+            </Link>
+            <Link
+              to="/signup"
+              className="px-6 py-2 rounded-full font-semibold text-white text-sm transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95 cursor-pointer inline-block"
+              style={{ background: cloudyColors.deep }}
+            >
+              Join Free
+            </Link>
+          </>
+        ) : (
+          <>
+            {profile && (
+              <Link
+                to="/study"
+                className="px-6 py-2 rounded-full font-semibold text-white text-sm transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95 cursor-pointer inline-block"
+                style={{ background: cloudyColors.deep }}
+              >
+                Start Studying
+              </Link>
+            )}
+            <button
+              onClick={() => logout()}
+              className="px-6 py-2 rounded-full font-semibold text-sm transition-all duration-200"
+              style={{
+                color: cloudyColors.textSoft,
+              }}
+            >
+              Log out
+            </button>
+          </>
+        )}
+      </div>
     </motion.nav>
   );
 };
