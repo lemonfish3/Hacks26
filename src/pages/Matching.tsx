@@ -29,7 +29,7 @@ export const Matching = ({ userData, profile }: MatchingProps) => {
           className="w-48 h-48 border-4 border-dashed border-cloud-blue rounded-full absolute"
         />
         <div className="w-48 h-48 flex items-center justify-center">
-          <Avatar type={userData.avatar.base} color={userData.avatar.color} size="md" />
+          <Avatar type="animal" color={userData.avatar.color} head={userData.avatar.head ?? 'head1'} clothes={userData.avatar.clothes ?? 'clothes1'} size="md" />
         </div>
       </div>
       <h2 className="text-3xl font-bold mb-2">Finding your partner...</h2>

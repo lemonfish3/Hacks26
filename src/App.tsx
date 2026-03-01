@@ -15,6 +15,7 @@ import type { ApiUser } from './lib/api';
 
 // --- Components ---
 import { CloudBackground } from './components/CloudBackground';
+import logoImg from './data/logo.PNG';
 
 // --- Pages ---
 import { Intro } from './pages/Intro';
@@ -52,7 +53,7 @@ const INITIAL_USER_DATA: UserData = {
   major: '',
   classes: [],
   buddyPreference: 'any',
-  avatar: { base: 'blob', color: '#B9E5FB' },
+  avatar: { base: 'animal', color: '#B9E5FB', head: 'head1', clothes: 'clothes1' },
   stats: {
     totalHours: 12.5,
     sessionsCompleted: 18,
@@ -97,7 +98,6 @@ export default function App() {
   const [sessionDuration, setSessionDuration] = useState(30);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
-  const [reaction, setReaction] = useState('idle');
   const [messages, setMessages] = useState<{sender: string, text: string}[]>([]);
   const [inputText, setInputText] = useState('');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -238,8 +238,8 @@ export default function App() {
           className="flex items-center gap-2 hover:opacity-90 active:scale-95 transition-opacity"
           aria-label="Go to home"
         >
-          <div className="w-10 h-10 bg-cloud-blue rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-            <span className="text-white text-xl">☁️</span>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
+            <img src={logoImg} alt="Cloudy" className="w-full h-full object-contain" />
           </div>
           <span className="font-black text-cloud-deep tracking-tighter text-2xl hidden sm:block">Cloudy</span>
         </button>
@@ -376,8 +376,6 @@ export default function App() {
             formatTime={formatTime}
             isMuted={isMuted}
             setIsMuted={setIsMuted}
-            reaction={reaction}
-            setReaction={setReaction}
             messages={messages}
             inputText={inputText}
             setInputText={setInputText}

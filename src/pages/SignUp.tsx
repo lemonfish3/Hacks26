@@ -8,6 +8,7 @@ import { motion } from 'motion/react';
 import { Avatar } from '../components/Avatar';
 import { UserData } from '../types';
 import { ChevronLeft, Save } from 'lucide-react';
+import { HEAD_IMAGES, HEADS, CLOTHES_IMAGES, CLOTHES } from '../constants/avatars';
 
 interface SignUpProps {
   userData: UserData;
@@ -19,7 +20,6 @@ interface SignUpProps {
   isEditing?: boolean;
 }
 
-const animals = ["🐱", "🦊", "🐨", "🐸", "🦋", "🐙", "🦁", "🐼", "🦄", "🐺"];
 const colors = ['#B9E5FB', '#FDE68A', '#A7F3D0', '#F9A8D4', '#C4B5FD', '#E2E8F0'];
 const focusAreas = ["💻 CS / Tech", "🧬 Bio / Med", "📐 Math", "📚 Humanities", "🎨 Arts"];
 
@@ -40,7 +40,7 @@ export const SignUp = ({ userData, setUserData, signupError, setSignupError, onS
           <ChevronLeft className="w-5 h-5" /> {isEditing ? 'Back to Profile' : 'Back to Home'}
         </button>
         <h2 className="text-2xl font-black text-cloud-deep uppercase tracking-widest">
-          {isEditing ? 'Edit Profile' : 'Avatar Creation'}
+          {isEditing ? 'Edit Profile' : 'Create Your Profile'}
         </h2>
       </div>
 
@@ -56,9 +56,9 @@ export const SignUp = ({ userData, setUserData, signupError, setSignupError, onS
           <Avatar 
             type={userData.avatar.base} 
             color={userData.avatar.color} 
-            emoji={userData.avatar.emoji}
+            head={userData.avatar.head}
+            clothes={userData.avatar.clothes}
             size="xl"
-            reaction="happy"
           />
 
           <div className="mt-12 w-full text-center">
@@ -140,29 +140,43 @@ export const SignUp = ({ userData, setUserData, signupError, setSignupError, onS
             <label className="uppercase tracking-widest text-[10px] font-black block mb-4 text-cloud-muted">
               Choose your animal
             </label>
-            <div className="grid grid-cols-5 gap-3">
-              {animals.map((animal) => (
+            <div className="grid grid-cols-3 gap-3">
+              {HEADS.map((headId) => (
                 <button
-                  key={animal}
-                  onClick={() => setUserData({...userData, avatar: {...userData.avatar, emoji: animal, base: 'animal'}})}
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all duration-200 border-4 ${userData.avatar.emoji === animal ? 'bg-cloud-blue border-cloud-deep scale-110 shadow-lg' : 'bg-white/50 border-transparent hover:bg-white'}`}
+                  key={headId}
+                  onClick={() => setUserData({...userData, avatar: {...userData.avatar, head: headId, clothes: userData.avatar.clothes ?? 'clothes1', base: 'animal'}})}
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden transition-all duration-200 border-4 ${userData.avatar.head === headId ? 'bg-cloud-blue border-cloud-deep scale-110 shadow-lg' : 'bg-white/50 border-transparent hover:bg-white'}`}
                 >
-                  {animal}
+                  <img src={HEAD_IMAGES[headId]} alt={headId} className="w-full h-full object-contain" />
                 </button>
               ))}
-              <button
-                onClick={() => setUserData({...userData, avatar: {...userData.avatar, emoji: undefined, base: 'blob'}})}
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all duration-200 border-4 ${!userData.avatar.emoji ? 'bg-cloud-blue border-cloud-deep scale-110 shadow-lg' : 'bg-white/50 border-transparent hover:bg-white'}`}
-              >
-                ☁️
-              </button>
             </div>
           </div>
+
+          {/* Clothes Selection */}
+          {userData.avatar.base === 'animal' && (
+            <div>
+              <label className="uppercase tracking-widest text-[10px] font-black block mb-4 text-cloud-muted">
+                Choose your clothes
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {CLOTHES.map((clothesId) => (
+                  <button
+                    key={clothesId}
+                    onClick={() => setUserData({...userData, avatar: {...userData.avatar, clothes: clothesId}})}
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden transition-all duration-200 border-4 ${(userData.avatar.clothes ?? 'clothes1') === clothesId ? 'bg-cloud-blue border-cloud-deep scale-110 shadow-lg' : 'bg-white/50 border-transparent hover:bg-white'}`}
+                  >
+                    <img src={CLOTHES_IMAGES[clothesId]} alt={clothesId} className="w-full h-full object-contain" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Color Selection */}
           <div>
             <label className="uppercase tracking-widest text-[10px] font-black block mb-4 text-cloud-muted">
-              Avatar color
+              Background color
             </label>
             <div className="grid grid-cols-6 gap-4">
               {colors.map((color) => (

@@ -8,6 +8,7 @@ import { motion } from 'motion/react';
 import { Search, Plus, Users, Clock, ChevronRight, Lock, RefreshCw, User } from 'lucide-react';
 import { Room, UserData } from '../types';
 import { Avatar } from '../components/Avatar';
+import { HEAD_IMAGES, CLOTHES_IMAGES } from '../constants/avatars';
 
 interface LobbyProps {
   userData: UserData;
@@ -24,9 +25,9 @@ const MOCK_ROOMS: Room[] = [
     tags: ['CS'],
     type: 'public',
     members: [
-      { nickname: 'User1', avatar: { base: 'blob', color: '#B9E5FB' } },
-      { nickname: 'User2', avatar: { base: 'animal', color: '#FDE68A' } },
-      { nickname: 'User3', avatar: { base: 'blob', color: '#A7F3D0' } },
+      { nickname: 'User1', avatar: { base: 'animal', color: '#B9E5FB', head: 'head1', clothes: 'clothes1' } },
+      { nickname: 'User2', avatar: { base: 'animal', color: '#FDE68A', head: 'head1', clothes: 'clothes1' } },
+      { nickname: 'User3', avatar: { base: 'animal', color: '#A7F3D0', head: 'head2', clothes: 'clothes2' } },
     ],
     maxMembers: 5,
     duration: 45,
@@ -39,8 +40,8 @@ const MOCK_ROOMS: Room[] = [
     tags: ['Bio'],
     type: 'public',
     members: [
-      { nickname: 'User4', avatar: { base: 'animal', color: '#F9A8D4' } },
-      { nickname: 'User5', avatar: { base: 'blob', color: '#C4B5FD' } },
+      { nickname: 'User4', avatar: { base: 'animal', color: '#F9A8D4', head: 'head2', clothes: 'clothes2' } },
+      { nickname: 'User5', avatar: { base: 'animal', color: '#C4B5FD', head: 'head3', clothes: 'clothes3' } },
     ],
     maxMembers: 5,
     duration: 30,
@@ -53,7 +54,7 @@ const MOCK_ROOMS: Room[] = [
     tags: ['Humanities'],
     type: 'private',
     members: [
-      { nickname: 'User6', avatar: { base: 'blob', color: '#B9E5FB' } },
+      { nickname: 'User6', avatar: { base: 'animal', color: '#B9E5FB', head: 'head1', clothes: 'clothes1' } },
     ],
     maxMembers: 5,
     duration: 60,
@@ -67,10 +68,10 @@ const MOCK_ROOMS: Room[] = [
     tags: ['Math'],
     type: 'public',
     members: [
-      { nickname: 'User7', avatar: { base: 'blob', color: '#B9E5FB' } },
-      { nickname: 'User8', avatar: { base: 'animal', color: '#FDE68A' } },
-      { nickname: 'User9', avatar: { base: 'blob', color: '#A7F3D0' } },
-      { nickname: 'User10', avatar: { base: 'animal', color: '#F9A8D4' } },
+      { nickname: 'User7', avatar: { base: 'animal', color: '#B9E5FB', head: 'head2', clothes: 'clothes1' } },
+      { nickname: 'User8', avatar: { base: 'animal', color: '#FDE68A', head: 'head1', clothes: 'clothes1' } },
+      { nickname: 'User9', avatar: { base: 'animal', color: '#A7F3D0', head: 'head3', clothes: 'clothes2' } },
+      { nickname: 'User10', avatar: { base: 'animal', color: '#F9A8D4', head: 'head3', clothes: 'clothes3' } },
     ],
     maxMembers: 5,
     duration: 25,
@@ -111,9 +112,10 @@ export const Lobby = ({ userData, onJoinRoom, onHostRoom, onOpenProfile }: Lobby
             className="flex items-center gap-3 bg-white/50 hover:bg-white p-2 pr-4 rounded-full transition-all shadow-sm group"
           >
             <Avatar 
-              type={userData.avatar.base} 
+              type="animal"
               color={userData.avatar.color} 
-              emoji={userData.avatar.emoji}
+              head={userData.avatar.head ?? 'head1'}
+              clothes={userData.avatar.clothes ?? 'clothes1'}
               size="sm" 
             />
             <div className="text-left hidden sm:block">
@@ -178,7 +180,19 @@ export const Lobby = ({ userData, onJoinRoom, onHostRoom, onOpenProfile }: Lobby
                     className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-xs shadow-sm"
                     style={{ backgroundColor: m.avatar.color }}
                   >
-                    {m.avatar.emoji || (m.avatar.base === 'blob' ? '☁️' : '🦊')}
+                    {m.avatar.head && HEAD_IMAGES[m.avatar.head] ? (
+                      <div className="relative w-full h-full">
+                        <img src={HEAD_IMAGES[m.avatar.head]} alt="" className="absolute inset-0 w-full h-full object-contain rounded-full" />
+                        {m.avatar.clothes && CLOTHES_IMAGES[m.avatar.clothes] && (
+                          <img src={CLOTHES_IMAGES[m.avatar.clothes]} alt="" className="absolute inset-0 w-full h-full object-contain rounded-full pointer-events-none" />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="relative w-full h-full">
+                        <img src={HEAD_IMAGES.head1} alt="" className="absolute inset-0 w-full h-full object-contain rounded-full" />
+                        <img src={CLOTHES_IMAGES.clothes1} alt="" className="absolute inset-0 w-full h-full object-contain rounded-full pointer-events-none" />
+                      </div>
+                    )}
                   </div>
                 ))}
                 {room.members.length < room.maxMembers && (
@@ -209,7 +223,10 @@ export const Lobby = ({ userData, onJoinRoom, onHostRoom, onOpenProfile }: Lobby
           onClick={onHostRoom}
           className="glass-card p-6 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-cloud-blue/30 bg-transparent hover:bg-white/20 transition-all min-h-[220px]"
         >
-          <div className="text-4xl">☁️</div>
+          <div className="w-16 h-16 relative">
+            <img src={HEAD_IMAGES.head1} alt="" className="absolute inset-0 w-full h-full object-contain" />
+            <img src={CLOTHES_IMAGES.clothes1} alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+          </div>
           <div className="text-center">
             <h3 className="font-bold text-cloud-deep">Host a new room</h3>
             <p className="text-xs text-cloud-muted">Private or public</p>

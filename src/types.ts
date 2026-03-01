@@ -28,7 +28,8 @@ export interface UserData {
   avatar: {
     base: string;
     color: string;
-    emoji?: string;
+    head?: 'head1' | 'head2' | 'head3';
+    clothes?: 'clothes1' | 'clothes2' | 'clothes3';
   };
   stats: {
     totalHours: number;
@@ -51,7 +52,7 @@ export interface Room {
   subject: string;
   tags: string[];
   type: 'public' | 'private';
-  members: { nickname: string; avatar: { base: string; color: string; emoji?: string } }[];
+  members: { nickname: string; avatar: { base: string; color: string; head?: 'head1' | 'head2' | 'head3'; clothes?: 'clothes1' | 'clothes2' | 'clothes3' } }[];
   maxMembers: number;
   duration: number;
   timeLeft: number;

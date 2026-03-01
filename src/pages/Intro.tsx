@@ -28,7 +28,7 @@ export const Intro = ({ onStart, onLogin }: IntroProps) => {
               Your Virtual <br /> <span className="text-cloud-muted">Study Sanctuary</span>
             </h1>
             <p className="text-xl text-cloud-muted mb-8 leading-relaxed">
-              Join thousands of students in a cozy, cloud-like space. Recreate the social accountability of a library from the comfort of your home.
+              Mass Study Spaces and Communities in the Cloud.
             </p>
             <div className="flex flex-wrap gap-4">
               <button 
@@ -39,30 +39,45 @@ export const Intro = ({ onStart, onLogin }: IntroProps) => {
               </button>
             </div>
           </div>
-        <div className="relative">
-          <motion.div 
-            animate={{ y: [0, -20, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            className="glass-card p-8 relative z-10"
+        <div className="relative min-h-[280px] w-full max-w-sm">
+          {/* Floating avatar icons with different combinations */}
+          <motion.div
+            className="absolute top-0 left-1/4"
+            animate={{ y: [0, -12, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           >
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-cloud-blue rounded-full" />
-              <div>
-                <div className="h-3 w-24 bg-cloud-blue/30 rounded-full mb-2" />
-                <div className="h-2 w-16 bg-cloud-blue/10 rounded-full" />
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="h-4 w-full bg-cloud-blue/5 rounded-full" />
-              <div className="h-4 w-full bg-cloud-blue/5 rounded-full" />
-              <div className="h-4 w-2/3 bg-cloud-blue/5 rounded-full" />
-            </div>
-            <div className="mt-8 flex justify-center">
-              <Avatar type="blob" color="#B9E5FB" size="md" />
-            </div>
+            <Avatar type="animal" color="#B9E5FB" size="md" head="head1" clothes="clothes1" />
           </motion.div>
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-cloud-blue/20 rounded-full blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-cloud-blue/20 rounded-full blur-3xl" />
+          <motion.div
+            className="absolute top-16 right-0"
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          >
+            <Avatar type="animal" color="#A8D8EA" size="md" head="head2" clothes="clothes2" />
+          </motion.div>
+          <motion.div
+            className="absolute bottom-8 left-0"
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          >
+            <Avatar type="animal" color="#C9E4DE" size="md" head="head3" clothes="clothes3" />
+          </motion.div>
+          <motion.div
+            className="absolute bottom-0 right-1/4"
+            animate={{ y: [0, 14, 0] }}
+            transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+          >
+            <Avatar type="animal" color="#F5E6D3" size="sm" head="head1" clothes="clothes2" />
+          </motion.div>
+          <motion.div
+            className="absolute top-8 right-1/3"
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+          >
+            <Avatar type="animal" color="#E8D5E7" size="sm" head="head2" clothes="clothes1" />
+          </motion.div>
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-cloud-blue/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-cloud-blue/20 rounded-full blur-3xl pointer-events-none" />
         </div>
       </div>
     </motion.div>

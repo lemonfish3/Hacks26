@@ -6,10 +6,7 @@
 
 import path from "path";
 import { fileURLToPath } from "url";
-<<<<<<< Updated upstream
 import crypto from "crypto";
-=======
->>>>>>> Stashed changes
 import dotenv from "dotenv";
 import express from "express";
 import nodemailer from "nodemailer";
@@ -20,27 +17,13 @@ import db from "./db.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-<<<<<<< Updated upstream
 const GMAIL_USER = process.env.GMAIL_USER?.trim();
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD?.trim();
 const RESEND_API_KEY = process.env.RESEND_API_KEY?.trim();
 const FROM_EMAIL_RESEND = process.env.FROM_EMAIL?.trim() || "StudyMate <onboarding@resend.dev>";
-=======
-const RESEND_API_KEY = process.env.RESEND_API_KEY?.trim();
-const resend = new Resend(RESEND_API_KEY);
-const DEFAULT_FROM = "StudyMate <onboarding@resend.dev>";
-let FROM_EMAIL = process.env.FROM_EMAIL?.trim() || DEFAULT_FROM;
-if (FROM_EMAIL.toLowerCase().includes("example.com")) {
-  console.warn("example.com cannot be verified (reserved domain). Using Resend default sender. To send to any .edu, add and verify a domain you own at https://resend.com/domains");
-  FROM_EMAIL = DEFAULT_FROM;
-}
->>>>>>> Stashed changes
 
 const useGmail = !!(GMAIL_USER && GMAIL_APP_PASSWORD);
 const useResend = !!RESEND_API_KEY && !useGmail;
@@ -155,7 +138,6 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.json({
     ok: true,
-<<<<<<< Updated upstream
     message: "StudyMate API. Sign up / log in via email code; use GET /api/me with Bearer token when logged in.",
     endpoints: [
       "POST /api/send-code",
@@ -165,10 +147,6 @@ app.get("/", (req, res) => {
       "POST /api/logout",
       "GET /api/match",
     ],
-=======
-    message: "StudyMate API. Use the app at your dev server URL (e.g. http://localhost:8080) to sign up or log in.",
-    endpoints: ["POST /api/send-code", "POST /api/verify-code"],
->>>>>>> Stashed changes
   });
 });
 
@@ -182,43 +160,7 @@ app.post("/api/send-code", async (req, res) => {
   }
 
   const code = generateCode();
-<<<<<<< Updated upstream
   codes.set(email.toLowerCase(), { code, expiresAt: Date.now() + CODE_TTL_MS });
-=======
-  codes.set(email.toLowerCase(), {
-    code,
-    expiresAt: Date.now() + CODE_TTL_MS,
-  });
-
-  if (!RESEND_API_KEY) {
-    console.error("RESEND_API_KEY is missing. Add it to .env in the project root.");
-    return res.status(500).json({
-      error: "Server is not configured to send email. Add RESEND_API_KEY to .env.",
-    });
-  }
-
-  const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
-    to: [email],
-    subject: "Your StudyMate verification code",
-    html: `
-      <p>Your verification code is:</p>
-      <p style="font-size:24px; font-weight:bold; letter-spacing:4px;">${code}</p>
-      <p>It expires in 10 minutes. If you didn't request this, you can ignore this email.</p>
-      <p>— StudyMate</p>
-    `,
-  });
-
-  if (error) {
-    console.error("Resend error:", error);
-    const message =
-      error?.message ||
-      (typeof error === "string" ? error : "Failed to send the code. Please try again.");
-    return res.status(500).json({
-      error: message,
-    });
-  }
->>>>>>> Stashed changes
 
   const sendError = await sendVerificationEmail(email, code);
   if (sendError) return res.status(500).json({ error: sendError });
@@ -324,15 +266,7 @@ app.get("/api/match", requireAuth, (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`StudyMate API running at http://localhost:${PORT}`);
-<<<<<<< Updated upstream
   if (useGmail) console.log("Email: Gmail SMTP (sends to any .edu).");
   else if (useResend) console.warn("Email: Resend (free tier may only send to account owner). For any .edu, set GMAIL_USER and GMAIL_APP_PASSWORD in .env.");
   else console.warn("Email not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD in .env to send to any .edu (no domain required).");
-=======
-  if (!RESEND_API_KEY) {
-    console.warn("Warning: RESEND_API_KEY not set. Add it to .env in the project root.");
-  } else {
-    console.log("RESEND_API_KEY loaded.");
-  }
->>>>>>> Stashed changes
 });
