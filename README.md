@@ -54,6 +54,8 @@ API endpoints: `POST /api/send-code`, `POST /api/verify-code`, `GET /api/me`, `P
 
 ## Tech stack
 
+This project is built with:
+
 - Vite
 - TypeScript
 - React
