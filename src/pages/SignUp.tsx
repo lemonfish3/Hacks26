@@ -40,7 +40,7 @@ export const SignUp = ({ userData, setUserData, signupError, setSignupError, onS
           <ChevronLeft className="w-5 h-5" /> {isEditing ? 'Back to Profile' : 'Back to Home'}
         </button>
         <h2 className="text-2xl font-black text-cloud-deep uppercase tracking-widest">
-          {isEditing ? 'Edit Profile' : 'Avatar Creation'}
+          {isEditing ? 'Edit Profile' : 'Create Your Profile'}
         </h2>
       </div>
 
