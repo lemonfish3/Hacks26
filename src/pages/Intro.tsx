@@ -6,6 +6,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Avatar } from '../components/Avatar';
+import logoImg from '../data/logo.PNG';
 
 interface IntroProps {
   onStart: () => void;
@@ -18,8 +19,8 @@ export const Intro = ({ onStart, onLogin }: IntroProps) => {
       {/* Navigation Header */}
       <nav className="fixed top-0 left-0 w-full p-6 md:p-10 flex justify-between items-center z-50">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-cloud-blue rounded-xl flex items-center justify-center shadow-sm">
-            <span className="text-white text-xl">☁️</span>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm overflow-hidden">
+            <img src={logoImg} alt="Cloudy" className="w-full h-full object-contain" />
           </div>
           <span className="font-black text-cloud-deep tracking-tighter text-2xl hidden sm:block">Cloudy</span>
         </div>
