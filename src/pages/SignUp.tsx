@@ -58,7 +58,6 @@ export const SignUp = ({ userData, setUserData, signupError, setSignupError, onS
             color={userData.avatar.color} 
             emoji={userData.avatar.emoji}
             size="xl"
-            reaction="happy"
           />
 
           <div className="mt-12 w-full text-center">

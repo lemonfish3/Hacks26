@@ -9,12 +9,11 @@ import { motion } from 'motion/react';
 interface AvatarProps {
   type: string;
   color: string;
-  reaction?: string;
   size?: "sm" | "md" | "lg" | "xl";
   emoji?: string;
 }
 
-export const Avatar = ({ type, color, reaction, size = "lg", emoji }: AvatarProps) => {
+export const Avatar = ({ type, color, size = "lg", emoji }: AvatarProps) => {
   const sizeClasses = {
     sm: "w-12 h-12 text-xl",
     md: "w-24 h-24 text-4xl",
@@ -45,20 +44,12 @@ export const Avatar = ({ type, color, reaction, size = "lg", emoji }: AvatarProp
           <>
             {/* Eyes */}
             <div className="flex gap-4 mb-2">
-              <motion.div 
-                animate={reaction === 'happy' ? { scaleY: [1, 0.2, 1] } : {}}
-                transition={{ duration: 0.2, repeat: Infinity, repeatDelay: 3 }}
-                className="w-3 h-3 bg-cloud-deep rounded-full" 
-              />
-              <motion.div 
-                animate={reaction === 'happy' ? { scaleY: [1, 0.2, 1] } : {}}
-                transition={{ duration: 0.2, repeat: Infinity, repeatDelay: 3 }}
-                className="w-3 h-3 bg-cloud-deep rounded-full" 
-              />
+              <div className="w-3 h-3 bg-cloud-deep rounded-full" />
+              <div className="w-3 h-3 bg-cloud-deep rounded-full" />
             </div>
             
             {/* Mouth */}
-            <div className={`absolute bottom-1/3 w-6 h-3 border-b-2 border-cloud-deep rounded-full ${reaction === 'happy' ? 'h-4' : 'h-1'}`} />
+            <div className="absolute bottom-1/3 w-6 h-3 border-b-2 border-cloud-deep rounded-full h-1" />
             
             {/* Blushing */}
             <div className="absolute top-1/2 left-4 w-4 h-2 bg-pink-400/30 rounded-full blur-sm" />

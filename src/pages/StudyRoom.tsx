@@ -20,8 +20,6 @@ interface StudyRoomProps {
   formatTime: (s: number) => string;
   isMuted: boolean;
   setIsMuted: (m: boolean) => void;
-  reaction: string;
-  setReaction: (r: string) => void;
   messages: { sender: string, text: string }[];
   inputText: string;
   setInputText: (t: string) => void;
@@ -38,8 +36,6 @@ export const StudyRoom = ({
   formatTime,
   isMuted,
   setIsMuted,
-  reaction,
-  setReaction,
   messages,
   inputText,
   setInputText,
@@ -133,7 +129,6 @@ export const StudyRoom = ({
               type={userData.avatar.base} 
               color={userData.avatar.color} 
               emoji={userData.avatar.emoji}
-              reaction={reaction} 
               size="md" 
             />
             <p className="mt-4 font-bold text-sm">{userData.nickname || 'You'}</p>
@@ -147,7 +142,6 @@ export const StudyRoom = ({
                 type={member.avatar.base} 
                 color={member.avatar.color} 
                 emoji={member.avatar.emoji}
-                reaction="idle" 
                 size="md" 
               />
               <p className="mt-4 font-bold text-sm">{member.nickname}</p>
@@ -176,17 +170,6 @@ export const StudyRoom = ({
               {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
               <span className="font-bold">{isMuted ? 'Muted' : 'Speaking'}</span>
             </button>
-            <div className="flex bg-white/50 p-2 rounded-2xl gap-2">
-              {['idle', 'happy', 'focus'].map(r => (
-                <button 
-                  key={r}
-                  onClick={() => setReaction(r)}
-                  className={`p-2 rounded-xl transition-all ${reaction === r ? 'bg-cloud-blue/30 text-cloud-deep' : 'text-cloud-muted hover:bg-white/50'}`}
-                >
-                  <Smile className="w-6 h-6" />
-                </button>
-              ))}
-            </div>
           </div>
           
           <div className="flex items-center gap-4 text-cloud-muted text-sm font-bold">

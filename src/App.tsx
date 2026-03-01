@@ -74,7 +74,6 @@ export default function App() {
   const [sessionDuration, setSessionDuration] = useState(30);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
-  const [reaction, setReaction] = useState('idle');
   const [messages, setMessages] = useState<{sender: string, text: string}[]>([]);
   const [inputText, setInputText] = useState('');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -250,8 +249,6 @@ export default function App() {
             formatTime={formatTime}
             isMuted={isMuted}
             setIsMuted={setIsMuted}
-            reaction={reaction}
-            setReaction={setReaction}
             messages={messages}
             inputText={inputText}
             setInputText={setInputText}
