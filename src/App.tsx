@@ -31,7 +31,7 @@ const INITIAL_USER_DATA: UserData = {
   major: '',
   classes: [],
   buddyPreference: 'any',
-  avatar: { base: 'blob', color: '#B9E5FB' },
+  avatar: { base: 'animal', color: '#B9E5FB', head: 'head1', clothes: 'clothes1' },
   stats: {
     totalHours: 12.5,
     sessionsCompleted: 18,

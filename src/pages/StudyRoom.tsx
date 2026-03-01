@@ -126,9 +126,10 @@ export const StudyRoom = ({
           {/* Current User */}
           <div className="text-center">
             <Avatar 
-              type={userData.avatar.base} 
+              type="animal"
               color={userData.avatar.color} 
-              emoji={userData.avatar.emoji}
+              head={userData.avatar.head ?? 'head1'}
+              clothes={userData.avatar.clothes ?? 'clothes1'}
               size="md" 
             />
             <p className="mt-4 font-bold text-sm">{userData.nickname || 'You'}</p>
@@ -139,9 +140,10 @@ export const StudyRoom = ({
           {room.members.map((member, i) => (
             <div key={i} className="text-center">
               <Avatar 
-                type={member.avatar.base} 
+                type="animal"
                 color={member.avatar.color} 
-                emoji={member.avatar.emoji}
+                head={member.avatar.head ?? 'head1'}
+                clothes={member.avatar.clothes ?? 'clothes1'}
                 size="md" 
               />
               <p className="mt-4 font-bold text-sm">{member.nickname}</p>

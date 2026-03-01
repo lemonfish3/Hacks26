@@ -35,9 +35,10 @@ export const Profile = ({ userData, onEnterLobby, toggleGoal, toggleTodo, onEdit
             title="Edit Profile & Avatar"
           >
             <Avatar 
-              type={userData.avatar.base} 
+              type="animal"
               color={userData.avatar.color} 
-              emoji={userData.avatar.emoji}
+              head={userData.avatar.head ?? 'head1'}
+              clothes={userData.avatar.clothes ?? 'clothes1'}
               size="md" 
             />
             <div className="absolute inset-0 bg-black/20 rounded-[40%] opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
