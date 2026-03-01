@@ -30,7 +30,7 @@ export interface ApiUser {
   major: string;
   age: number;
   gender: string;
-  avatar: { base: string; color: string; emoji?: string };
+  avatar: { base: string; color: string; emoji?: string; head?: string; clothes?: string };
   preference: string;
   buddyPreference: string;
   createdAt?: string;
@@ -100,4 +100,50 @@ export async function getMatch(params?: {
 }): Promise<MatchResponse> {
   const q = new URLSearchParams(params as Record<string, string>).toString();
   return request(`/api/match${q ? `?${q}` : ""}`);
+}
+
+// --- Rooms (join by code, create room) ---
+export interface ApiRoomMember {
+  nickname: string;
+  avatar: { base: string; color: string; head?: string; clothes?: string };
+}
+
+export interface ApiRoom {
+  id: string;
+  inviteCode: string;
+  name: string;
+  hostNickname: string;
+  members: ApiRoomMember[];
+  duration: number;
+  maxMembers: number;
+  timeLeft?: number;
+}
+
+export async function createRoom(params: {
+  name: string;
+  hostNickname: string;
+  duration: number;
+}): Promise<{ room: ApiRoom }> {
+  return request("/api/rooms", { method: "POST", body: params });
+}
+
+export async function getRoomByCode(code: string): Promise<{ room: ApiRoom }> {
+  const trimmed = code.trim().toUpperCase().replace(/\s/g, "");
+  return request(`/api/rooms/by-code/${encodeURIComponent(trimmed)}`);
+}
+
+export async function joinRoom(
+  roomId: string,
+  member: { nickname: string; avatar: ApiRoomMember["avatar"] }
+): Promise<{ room: ApiRoom; member: ApiRoomMember }> {
+  return request(`/api/rooms/${encodeURIComponent(roomId)}/join`, {
+    method: "POST",
+    body: member,
+  });
+}
+
+/** WebSocket URL for room channel (timer, voice signaling). Use same host as API. */
+export function getWsUrl(): string {
+  const base = getBaseUrl().replace(/^http/, "ws");
+  return base;
 }

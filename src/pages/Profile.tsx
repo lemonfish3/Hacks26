@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ChevronRight, CheckCircle2, BookOpen, Clock } from 'lucide-react';
+import { ChevronRight, CheckCircle2, BookOpen, Clock, Plus } from 'lucide-react';
 import { Avatar } from '../components/Avatar';
 import { UserData } from '../types';
 
@@ -14,10 +14,33 @@ interface ProfileProps {
   onEnterLobby: () => void;
   toggleGoal: (id: string) => void;
   toggleTodo: (id: string) => void;
+  addGoal: (text: string) => void;
+  addTodo: (text: string) => void;
   onEditProfile: () => void;
 }
 
-export const Profile = ({ userData, onEnterLobby, toggleGoal, toggleTodo, onEditProfile }: ProfileProps) => {
+export const Profile = ({ userData, onEnterLobby, toggleGoal, toggleTodo, addGoal, addTodo, onEditProfile }: ProfileProps) => {
+  const [newGoalText, setNewGoalText] = useState('');
+  const [newTodoText, setNewTodoText] = useState('');
+
+  const handleAddGoal = (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = newGoalText.trim();
+    if (text && typeof addGoal === 'function') {
+      addGoal(text);
+      setNewGoalText('');
+    }
+  };
+
+  const handleAddTodo = (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = newTodoText.trim();
+    if (text && typeof addTodo === 'function') {
+      addTodo(text);
+      setNewTodoText('');
+    }
+  };
+
   return (
     <motion.div 
       key="profile"
@@ -125,9 +148,22 @@ export const Profile = ({ userData, onEnterLobby, toggleGoal, toggleTodo, onEdit
                   </div>
                 </button>
               ))}
-              <button className="w-full p-4 rounded-2xl border-2 border-dashed border-cloud-blue/30 text-cloud-muted text-sm font-bold hover:bg-white/50 transition-all">
-                + Add New Goal
-              </button>
+              <form onSubmit={handleAddGoal} className="flex gap-2">
+                <input
+                  type="text"
+                  value={newGoalText}
+                  onChange={(e) => setNewGoalText(e.target.value)}
+                  placeholder="New goal..."
+                  className="flex-1 px-4 py-3 rounded-2xl border-2 border-cloud-blue/20 bg-white/50 focus:border-cloud-blue focus:outline-none text-sm font-medium placeholder:text-cloud-muted"
+                />
+                <button
+                  type="submit"
+                  disabled={!newGoalText.trim()}
+                  className="px-4 py-3 rounded-2xl bg-cloud-deep text-white font-bold text-sm hover:bg-cloud-deep/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+              </form>
             </div>
           </div>
 
@@ -148,9 +184,22 @@ export const Profile = ({ userData, onEnterLobby, toggleGoal, toggleTodo, onEdit
                   </div>
                 </button>
               ))}
-              <button className="w-full p-4 rounded-2xl border-2 border-dashed border-cloud-blue/30 text-cloud-muted text-sm font-bold hover:bg-white/50 transition-all">
-                + Add New Task
-              </button>
+              <form onSubmit={handleAddTodo} className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTodoText}
+                  onChange={(e) => setNewTodoText(e.target.value)}
+                  placeholder="New task..."
+                  className="flex-1 px-4 py-3 rounded-2xl border-2 border-cloud-blue/20 bg-white/50 focus:border-cloud-blue focus:outline-none text-sm font-medium placeholder:text-cloud-muted"
+                />
+                <button
+                  type="submit"
+                  disabled={!newTodoText.trim()}
+                  className="px-4 py-3 rounded-2xl bg-cloud-deep text-white font-bold text-sm hover:bg-cloud-deep/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+              </form>
             </div>
           </div>
         </div>

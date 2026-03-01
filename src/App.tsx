@@ -10,8 +10,8 @@ import { AnimatePresence } from 'motion/react';
 import { AppState, UserData, UserProfile, Room } from './types';
 
 // --- API ---
-import { getToken, getMe, logout, updateMe } from './lib/api';
-import type { ApiUser } from './lib/api';
+import { getToken, getMe, logout, updateMe, createRoom, getRoomByCode, joinRoom } from './lib/api';
+import type { ApiUser, ApiRoom } from './lib/api';
 
 // --- Components ---
 import { CloudBackground } from './components/CloudBackground';
@@ -28,6 +28,30 @@ import { Matching } from './pages/Matching';
 import { StudyRoom } from './pages/StudyRoom';
 import { Stats } from './pages/Stats';
 
+function apiRoomToRoom(api: ApiRoom): Room {
+  const members = (api.members || []).map((m) => ({
+    nickname: m.nickname,
+    avatar: {
+      ...m.avatar,
+      head: (m.avatar?.head ?? 'head1') as 'head1' | 'head2' | 'head3',
+      clothes: (m.avatar?.clothes ?? 'clothes1') as 'clothes1' | 'clothes2' | 'clothes3',
+    },
+  }));
+  return {
+    id: api.id,
+    name: api.name,
+    subject: api.name,
+    tags: ['General'],
+    type: 'public',
+    members,
+    maxMembers: api.maxMembers ?? 5,
+    duration: api.duration ?? 25,
+    timeLeft: api.timeLeft ?? api.duration ?? 25,
+    inviteCode: api.inviteCode,
+    hostNickname: api.hostNickname,
+  };
+}
+
 function apiUserToUserData(u: ApiUser): UserData {
   return {
     ...INITIAL_USER_DATA,
@@ -38,9 +62,10 @@ function apiUserToUserData(u: ApiUser): UserData {
     major: u.major ?? '',
     buddyPreference: u.buddyPreference ?? 'any',
     avatar: {
-      base: u.avatar?.base ?? 'blob',
+      base: u.avatar?.base ?? 'animal',
       color: u.avatar?.color ?? '#B9E5FB',
-      emoji: u.avatar?.emoji,
+      head: (u.avatar?.head ?? 'head1') as UserData['avatar']['head'],
+      clothes: (u.avatar?.clothes ?? 'clothes1') as UserData['avatar']['clothes'],
     },
   };
 }
@@ -89,6 +114,7 @@ export default function App() {
   const [sessionChecked, setSessionChecked] = useState(false);
 
   const [signupError, setSignupError] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
   const [profile, setProfile] = useState<UserProfile>({
     nickname: '',
     ageRange: '18-22',
@@ -159,22 +185,39 @@ export default function App() {
     setState('settings');
   };
 
-  const handleCreateRoom = () => {
-    const newRoom: Room = {
-      id: Date.now().toString(),
-      name: `${userData.nickname || 'Cloudy Student'}'s Space`,
-      subject: 'Custom Subject',
-      tags: ['General'],
-      type: 'public',
-      members: [],
-      maxMembers: 5,
-      duration: sessionDuration,
-      timeLeft: sessionDuration,
-      inviteCode: 'CLD-' + Math.floor(1000 + Math.random() * 9000)
-    };
-    setCurrentRoom(newRoom);
-    setTimeLeft(sessionDuration * 60);
-    setState('study');
+  const handleCreateRoom = async () => {
+    try {
+      const nickname = userData.nickname || 'Cloudy Student';
+      const { room: apiRoom } = await createRoom({
+        name: `${nickname}'s Space`,
+        hostNickname: nickname,
+        duration: sessionDuration,
+      });
+      setCurrentRoom(apiRoomToRoom(apiRoom));
+      setTimeLeft((apiRoom.duration ?? sessionDuration) * 60);
+      setState('study');
+    } catch (err) {
+      console.error('Create room failed:', err);
+      alert(err instanceof Error ? err.message : 'Failed to create room. Is the server running?');
+    }
+  };
+
+  const handleJoinByCode = async (code: string) => {
+    const trimmed = code.trim().toUpperCase().replace(/\s/g, '');
+    if (!trimmed) return;
+    try {
+      const { room: apiRoom } = await getRoomByCode(trimmed);
+      const { room: joinedRoom } = await joinRoom(apiRoom.id, {
+        nickname: userData.nickname || 'Anonymous',
+        avatar: userData.avatar,
+      });
+      setCurrentRoom(apiRoomToRoom(joinedRoom));
+      setTimeLeft((joinedRoom.duration ?? 25) * 60);
+      setState('study');
+    } catch (err) {
+      console.error('Join room failed:', err);
+      alert(err instanceof Error ? err.message : 'Could not join room. Check the code and try again.');
+    }
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -199,6 +242,20 @@ export default function App() {
     setUserData(prev => ({
       ...prev,
       goals: prev.goals.map(g => g.id === id ? { ...g, completed: !g.completed } : g)
+    }));
+  };
+
+  const addGoal = (text: string) => {
+    setUserData(prev => ({
+      ...prev,
+      goals: [...prev.goals, { id: Date.now().toString(), text, completed: false }]
+    }));
+  };
+
+  const addTodo = (text: string) => {
+    setUserData(prev => ({
+      ...prev,
+      todos: [...prev.todos, { id: Date.now().toString(), text, completed: false }]
     }));
   };
 
@@ -297,29 +354,47 @@ export default function App() {
             signupError={signupError}
             setSignupError={setSignupError}
             isEditing={isEditingProfile}
+            saving={savingProfile}
             onSave={async () => {
               if (!userData.nickname.trim() || !userData.major.trim() || !userData.email.trim()) {
                 setSignupError('Please fill in all required fields.');
                 return;
               }
+              if (isEditingProfile && !getToken()) {
+                setSignupError('Session expired. Please log out and log in again to save changes.');
+                return;
+              }
               setSignupError('');
+              setSavingProfile(true);
               try {
-                const { user } = await updateMe({
+                const res = await updateMe({
                   nickname: userData.nickname,
                   major: userData.major,
-                  email: userData.email,
                   age: userData.age,
                   gender: userData.gender,
-                  avatar: userData.avatar,
+                  avatar: {
+                    base: userData.avatar.base ?? 'animal',
+                    color: userData.avatar.color ?? '#B9E5FB',
+                    head: userData.avatar.head ?? 'head1',
+                    clothes: userData.avatar.clothes ?? 'clothes1',
+                  },
                   buddyPreference: userData.buddyPreference,
                   preference: profile.preference,
                 });
+                const user = res?.user;
+                if (!user) {
+                  setSignupError('Invalid response from server. Please try again.');
+                  return;
+                }
                 setUserData(apiUserToUserData(user));
-                setProfile((p) => ({ ...p, nickname: user.nickname ?? '', preference: (user.preference as UserProfile['preference']) ?? 'silent' }));
+                setProfile((p) => ({ ...p, nickname: user.nickname ?? '', preference: (user.preference as UserProfile['preference']) ?? 'silent', avatar: { ...p.avatar, ...user.avatar, accessory: (p.avatar as { accessory?: string }).accessory ?? 'none' } }));
                 setState('profile');
                 setIsEditingProfile(false);
               } catch (err) {
-                setSignupError(err instanceof Error ? err.message : 'Failed to save profile');
+                const msg = err instanceof Error ? err.message : 'Failed to save profile';
+                setSignupError(msg + (msg.includes('fetch') || msg.includes('Network') ? ' Is the server running? (npm run server)' : ''));
+              } finally {
+                setSavingProfile(false);
               }
             }}
             onBack={() => {
@@ -339,6 +414,8 @@ export default function App() {
             onEnterLobby={() => setState('lobby')} 
             toggleGoal={toggleGoal}
             toggleTodo={toggleTodo}
+            addGoal={addGoal}
+            addTodo={addTodo}
             onEditProfile={() => {
               setIsEditingProfile(true);
               setState('signup');
@@ -350,6 +427,7 @@ export default function App() {
           <Lobby 
             userData={userData}
             onJoinRoom={handleJoinRoom}
+            onJoinByCode={handleJoinByCode}
             onHostRoom={handleHostRoom}
             onOpenProfile={() => setState('profile')}
           />

@@ -18,12 +18,13 @@ interface SignUpProps {
   onSave: () => void;
   onBack: () => void;
   isEditing?: boolean;
+  saving?: boolean;
 }
 
 const colors = ['#B9E5FB', '#FDE68A', '#A7F3D0', '#F9A8D4', '#C4B5FD', '#E2E8F0'];
 const focusAreas = ["💻 CS / Tech", "🧬 Bio / Med", "📐 Math", "📚 Humanities", "🎨 Arts"];
 
-export const SignUp = ({ userData, setUserData, signupError, setSignupError, onSave, onBack, isEditing }: SignUpProps) => {
+export const SignUp = ({ userData, setUserData, signupError, setSignupError, onSave, onBack, isEditing, saving = false }: SignUpProps) => {
   return (
     <motion.div 
       key="signup"
@@ -210,12 +211,14 @@ export const SignUp = ({ userData, setUserData, signupError, setSignupError, onS
 
           {/* CTA Button */}
           <div className="pt-4">
-            {signupError && <p className="text-xs text-red-500 mb-4 font-bold">{signupError}</p>}
+            {signupError && <p className="text-sm text-red-600 mb-4 font-bold p-3 bg-red-50 rounded-xl border border-red-200">{signupError}</p>}
             <button 
+              type="button"
               onClick={onSave}
-              className="w-full py-5 bg-cloud-deep text-white rounded-2xl font-black text-lg hover:bg-cloud-deep/90 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-[0.98]"
+              disabled={saving}
+              className="w-full py-5 bg-cloud-deep text-white rounded-2xl font-black text-lg hover:bg-cloud-deep/90 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <Save className="w-6 h-6" /> {isEditing ? 'Save Changes' : 'Save & Enter Lobby'}
+              <Save className="w-6 h-6" /> {saving ? 'Saving...' : (isEditing ? 'Save Changes' : 'Save & Enter Lobby')}
             </button>
           </div>
         </motion.div>

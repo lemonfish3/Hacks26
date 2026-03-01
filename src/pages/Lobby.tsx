@@ -13,6 +13,7 @@ import { HEAD_IMAGES, CLOTHES_IMAGES } from '../constants/avatars';
 interface LobbyProps {
   userData: UserData;
   onJoinRoom: (room: Room) => void;
+  onJoinByCode: (code: string) => void;
   onHostRoom: () => void;
   onOpenProfile: () => void;
 }
@@ -79,9 +80,11 @@ const MOCK_ROOMS: Room[] = [
   }
 ];
 
-export const Lobby = ({ userData, onJoinRoom, onHostRoom, onOpenProfile }: LobbyProps) => {
+export const Lobby = ({ userData, onJoinRoom, onJoinByCode, onHostRoom, onOpenProfile }: LobbyProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [joinCode, setJoinCode] = useState('');
+  const [joining, setJoining] = useState(false);
 
   const filters = ['All', '💻 CS', '🧬 Bio', '📐 Math', '📚 Humanities'];
 
@@ -124,6 +127,38 @@ export const Lobby = ({ userData, onJoinRoom, onHostRoom, onOpenProfile }: Lobby
             </div>
           </button>
         </div>
+      </div>
+
+      {/* Join with code */}
+      <div className="flex flex-wrap gap-2 mb-6 p-4 rounded-2xl bg-cloud-blue/10 border-2 border-cloud-blue/20">
+        <span className="text-sm font-bold text-cloud-deep self-center">Have a code?</span>
+        <input
+          type="text"
+          placeholder="e.g. CLD-5521"
+          className="flex-1 min-w-[120px] px-4 py-2 rounded-xl border-2 border-cloud-blue/20 bg-white/80 focus:border-cloud-blue focus:outline-none text-sm font-mono uppercase"
+          value={joinCode}
+          onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' || !joinCode.trim()) return;
+            setJoining(true);
+            onJoinByCode(joinCode).finally(() => setJoining(false));
+          }}
+        />
+        <button
+          type="button"
+          disabled={!joinCode.trim() || joining}
+          onClick={async () => {
+            setJoining(true);
+            try {
+              await onJoinByCode(joinCode);
+            } finally {
+              setJoining(false);
+            }
+          }}
+          className="px-5 py-2 rounded-xl bg-cloud-deep text-white text-sm font-bold hover:bg-cloud-deep/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {joining ? 'Joining...' : 'Join room'}
+        </button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-8 items-center">

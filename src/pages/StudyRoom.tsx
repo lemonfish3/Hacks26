@@ -3,15 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { 
   Clock, RefreshCw, LogOut, User, Mic, MicOff, 
   MessageCircle, Smile, Send, BookOpen, Settings,
-  Copy, Check, Share2, Plus
+  Copy, Check, Share2, Plus, Timer, Square, Monitor, MonitorOff
 } from 'lucide-react';
 import { Avatar } from '../components/Avatar';
 import { UserData, Room } from '../types';
+import { getWsUrl } from '../lib/api';
+import { useRoomMedia } from '../hooks/useRoomMedia';
 
 interface StudyRoomProps {
   userData: UserData;
@@ -45,8 +47,89 @@ export const StudyRoom = ({
   onEndSession
 }: StudyRoomProps) => {
   const [copied, setCopied] = useState(false);
-  const [roomColor, setRoomColor] = useState('#f8fafc'); // Default bg color
+  const [roomColor, setRoomColor] = useState('#f8fafc');
   const [showSettings, setShowSettings] = useState(false);
+  const myNickname = userData.nickname || 'Anonymous';
+
+  // Shared Pomodoro timer (synced via WebSocket)
+  const POMODORO_MINS = 25;
+  const [pomodoroSeconds, setPomodoroSeconds] = useState(POMODORO_MINS * 60);
+  const [pomodoroRunning, setPomodoroRunning] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  const {
+    remoteStreams,
+    remoteScreens,
+    isSharingScreen,
+    startScreenShare,
+    stopScreenShare,
+    handleWsMessage,
+    micError,
+  } = useRoomMedia(wsRef, room.id, myNickname, isMuted);
+
+  const handleWsMessageRef = useRef(handleWsMessage);
+  handleWsMessageRef.current = handleWsMessage;
+
+  useEffect(() => {
+    const base = getWsUrl();
+    const url = `${base}/?roomId=${encodeURIComponent(room.id)}&nickname=${encodeURIComponent(myNickname)}`;
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data as string);
+        handleWsMessageRef.current(msg);
+        if (msg.type === 'timer_start') {
+          const mins = typeof msg.duration === 'number' ? msg.duration : POMODORO_MINS;
+          setPomodoroSeconds(mins * 60);
+          setPomodoroRunning(true);
+        } else if (msg.type === 'timer_end') {
+          setPomodoroRunning(false);
+          setPomodoroSeconds(POMODORO_MINS * 60);
+        }
+      } catch (_) {}
+    };
+    return () => {
+      ws.close();
+      wsRef.current = null;
+    };
+  }, [room.id, myNickname]);
+
+  useEffect(() => {
+    if (!pomodoroRunning) return;
+    const t = setInterval(() => {
+      setPomodoroSeconds((s) => {
+        if (s <= 1) {
+          setPomodoroRunning(false);
+          return POMODORO_MINS * 60;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [pomodoroRunning]);
+
+  const sendPomodoroStart = () => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'timer_start', duration: POMODORO_MINS }));
+    }
+    setPomodoroSeconds(POMODORO_MINS * 60);
+    setPomodoroRunning(true);
+  };
+
+  const sendPomodoroEnd = () => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'timer_end' }));
+    }
+    setPomodoroRunning(false);
+    setPomodoroSeconds(POMODORO_MINS * 60);
+  };
+
+  const formatPomodoro = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+  };
 
   const copyInviteCode = () => {
     const code = room.inviteCode || 'CLD-5521';
@@ -56,6 +139,7 @@ export const StudyRoom = ({
   };
 
   const colors = ['#f8fafc', '#f0f9ff', '#f5f3ff', '#fff7ed', '#f0fdf4'];
+  const otherMembers = room.members.filter((m) => m.nickname !== userData.nickname);
 
   return (
     <motion.div 
@@ -68,11 +152,35 @@ export const StudyRoom = ({
       {/* Main Study Space */}
       <div className="flex-1 glass-card p-8 flex flex-col relative overflow-hidden">
         {/* Top Bar */}
-        <div className="flex items-center justify-between mb-8 z-10">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between mb-8 z-10 flex-wrap gap-3">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="bg-white/80 px-6 py-3 rounded-full shadow-sm flex items-center gap-3">
               <Clock className="w-5 h-5 text-cloud-deep" />
               <span className="text-2xl font-display font-bold tabular-nums">{formatTime(timeLeft)}</span>
+            </div>
+            {/* Pomodoro: group start/end */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="bg-white/80 px-4 py-2 rounded-full shadow-sm flex items-center gap-2">
+                <Timer className="w-4 h-4 text-cloud-deep" />
+                <span className="text-lg font-display font-bold tabular-nums">{formatPomodoro(pomodoroSeconds)}</span>
+              </div>
+              {!pomodoroRunning ? (
+                <button
+                  type="button"
+                  onClick={sendPomodoroStart}
+                  className="px-4 py-2 rounded-full bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 shadow-sm"
+                >
+                  Start Pomodoro ({POMODORO_MINS} min)
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={sendPomodoroEnd}
+                  className="px-4 py-2 rounded-full bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 shadow-sm flex items-center gap-1"
+                >
+                  <Square className="w-4 h-4" /> End timer
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-2 px-4 py-2 bg-white/50 rounded-full text-xs font-bold text-cloud-deep shadow-sm">
               <Share2 className="w-3 h-3" />
@@ -133,11 +241,15 @@ export const StudyRoom = ({
               size="md" 
             />
             <p className="mt-4 font-bold text-sm">{userData.nickname || 'You'}</p>
-            <span className="text-[10px] bg-cloud-blue/30 px-2 py-1 rounded-full text-cloud-deep font-bold">Host</span>
+            {room.hostNickname === userData.nickname ? (
+              <span className="text-[10px] bg-cloud-blue/30 px-2 py-1 rounded-full text-cloud-deep font-bold">Host</span>
+            ) : (
+              <span className="text-[10px] bg-cloud-blue/30 px-2 py-1 rounded-full text-cloud-deep font-bold">Studying</span>
+            )}
           </div>
 
-          {/* Other Members */}
-          {room.members.map((member, i) => (
+          {/* Other Members (exclude self if present in list) */}
+          {otherMembers.map((member, i) => (
             <div key={i} className="text-center">
               <Avatar 
                 type="animal"
@@ -152,7 +264,7 @@ export const StudyRoom = ({
           ))}
 
           {/* Empty Slots */}
-          {Array.from({ length: Math.max(0, 4 - room.members.length) }).map((_, i) => (
+          {Array.from({ length: Math.max(0, 4 - otherMembers.length) }).map((_, i) => (
             <div key={`empty-${i}`} className="text-center opacity-20">
               <div className="w-24 h-24 border-2 border-dashed border-cloud-blue rounded-[40%] flex items-center justify-center">
                 <Plus className="w-6 h-6 text-cloud-blue" />
@@ -162,9 +274,33 @@ export const StudyRoom = ({
           ))}
         </div>
 
+        {/* Remote voice: hidden audio elements */}
+        {Object.entries(remoteStreams).map(([nick, stream]) => (
+          <audio key={nick} autoPlay playsInline ref={(el) => { if (el) el.srcObject = stream; }} />
+        ))}
+
+        {/* Screen shares */}
+        {Object.keys(remoteScreens).length > 0 && (
+          <div className="mt-4 p-3 rounded-2xl bg-black/10 border border-cloud-blue/20">
+            <h4 className="text-xs font-bold text-cloud-deep mb-2">Shared screens</h4>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(remoteScreens).map(([nick, stream]) => (
+                <div key={nick} className="rounded-xl overflow-hidden bg-black/80 aspect-video max-w-[280px]">
+                  <video autoPlay playsInline muted className="w-full h-full object-contain" ref={(el) => { if (el) el.srcObject = stream; }} />
+                  <p className="text-[10px] text-white/80 px-2 py-1 truncate">{nick}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {micError && (
+          <p className="text-xs text-amber-600 font-medium mt-2">Mic: {micError}</p>
+        )}
+
         {/* Bottom Controls */}
-        <div className="mt-8 flex items-center justify-between z-10">
-          <div className="flex gap-4">
+        <div className="mt-8 flex items-center justify-between z-10 flex-wrap gap-3">
+          <div className="flex gap-2 flex-wrap">
             <button 
               onClick={() => setIsMuted(!isMuted)}
               className={`p-4 rounded-2xl transition-all flex items-center gap-2 ${isMuted ? 'bg-cloud-muted/20 text-cloud-muted' : 'bg-cloud-deep text-white shadow-lg'}`}
@@ -172,12 +308,29 @@ export const StudyRoom = ({
               {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
               <span className="font-bold">{isMuted ? 'Muted' : 'Speaking'}</span>
             </button>
+            {!isSharingScreen ? (
+              <button
+                type="button"
+                onClick={startScreenShare}
+                className="p-4 rounded-2xl bg-white/80 hover:bg-white border-2 border-cloud-blue/30 flex items-center gap-2 text-cloud-deep font-bold transition-all"
+              >
+                <Monitor className="w-6 h-6" /> Share screen
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={stopScreenShare}
+                className="p-4 rounded-2xl bg-rose-500 text-white flex items-center gap-2 font-bold transition-all"
+              >
+                <MonitorOff className="w-6 h-6" /> Stop sharing
+              </button>
+            )}
           </div>
           
           <div className="flex items-center gap-4 text-cloud-muted text-sm font-bold">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-              {room.members.length + 1} Users Online
+              {1 + room.members.length} Users Online
             </div>
           </div>
         </div>

@@ -57,6 +57,8 @@ export interface Room {
   duration: number;
   timeLeft: number;
   inviteCode?: string;
+  /** Nickname of the user who created the room; only they see "Host" */
+  hostNickname?: string;
 }
 
 export interface UserProfile {

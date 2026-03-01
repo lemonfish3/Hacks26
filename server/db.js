@@ -47,4 +47,12 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 `);
 
+// Add avatar head/clothes columns if missing (e.g. existing DBs)
+try {
+  db.exec("ALTER TABLE users ADD COLUMN avatar_head TEXT");
+} catch (_) {}
+try {
+  db.exec("ALTER TABLE users ADD COLUMN avatar_clothes TEXT");
+} catch (_) {}
+
 export default db;

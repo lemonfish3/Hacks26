@@ -10,6 +10,7 @@ import { sendCode, verifyCode, setToken } from '../lib/api';
 import type { ApiUser } from '../lib/api';
 
 interface AuthProps {
+  key?: React.Key;
   mode?: 'signin' | 'signup';
   email: string;
   setEmail: (email: string) => void;

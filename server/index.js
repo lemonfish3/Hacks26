@@ -6,9 +6,11 @@
 
 import path from "path";
 import { fileURLToPath } from "url";
+import http from "http";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import express from "express";
+import { WebSocketServer } from "ws";
 import nodemailer from "nodemailer";
 import { Resend } from "resend";
 import cors from "cors";
@@ -93,11 +95,11 @@ async function sendVerificationEmail(to, code) {
   return "Email not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD in .env to send verification codes to any .edu (no domain required). See README.";
 }
 
-/** Convert DB user row to API shape (camelCase + nested avatar) */
+/** Convert DB user row to API shape (camelCase + nested avatar). Use uid when present (session join) so id is the user id, not session id. */
 function rowToUser(row) {
   if (!row) return null;
   return {
-    id: row.id,
+    id: row.uid ?? row.id,
     email: row.email,
     nickname: row.nickname || "",
     major: row.major || "",
@@ -107,6 +109,8 @@ function rowToUser(row) {
       base: row.avatar_base || "blob",
       color: row.avatar_color || "#B9E5FB",
       emoji: row.avatar_emoji || undefined,
+      head: row.avatar_head || "head1",
+      clothes: row.avatar_clothes || "clothes1",
     },
     preference: row.preference || "silent",
     buddyPreference: row.buddy_preference || "any",
@@ -123,7 +127,7 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ error: "Not authenticated." });
   }
   const session = db.prepare(
-    "SELECT s.id, s.user_id, u.id as uid, u.email, u.nickname, u.major, u.age, u.gender, u.avatar_base, u.avatar_color, u.avatar_emoji, u.preference, u.buddy_preference, u.created_at, u.updated_at FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ? AND datetime(s.expires_at) > datetime('now')"
+    "SELECT s.id, s.user_id, u.id as uid, u.email, u.nickname, u.major, u.age, u.gender, u.avatar_base, u.avatar_color, u.avatar_emoji, u.avatar_head, u.avatar_clothes, u.preference, u.buddy_preference, u.created_at, u.updated_at FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ? AND datetime(s.expires_at) > datetime('now')"
   ).get(token);
   if (!session) {
     return res.status(401).json({ error: "Session expired or invalid." });
@@ -216,9 +220,11 @@ app.put("/api/me", requireAuth, (req, res) => {
   const avatar = body.avatar || u.avatar || {};
   const preference = (body.preference ?? u.preference ?? "silent").toString();
   const buddyPreference = (body.buddyPreference ?? u.buddyPreference ?? "any").toString();
+  const avatarHead = (avatar.head ?? u.avatar?.head ?? "head1").toString();
+  const avatarClothes = (avatar.clothes ?? u.avatar?.clothes ?? "clothes1").toString();
 
   db.prepare(
-    `UPDATE users SET nickname = ?, major = ?, age = ?, gender = ?, avatar_base = ?, avatar_color = ?, avatar_emoji = ?, preference = ?, buddy_preference = ?, updated_at = datetime('now') WHERE id = ?`
+    `UPDATE users SET nickname = ?, major = ?, age = ?, gender = ?, avatar_base = ?, avatar_color = ?, avatar_emoji = ?, avatar_head = ?, avatar_clothes = ?, preference = ?, buddy_preference = ?, updated_at = datetime('now') WHERE id = ?`
   ).run(
     nickname,
     major,
@@ -227,11 +233,16 @@ app.put("/api/me", requireAuth, (req, res) => {
     avatar.base || "blob",
     avatar.color || "#B9E5FB",
     avatar.emoji || null,
+    avatarHead,
+    avatarClothes,
     preference,
     buddyPreference,
     u.id
   );
   const updated = db.prepare("SELECT * FROM users WHERE id = ?").get(u.id);
+  if (!updated) {
+    return res.status(500).json({ error: "Failed to load updated profile." });
+  }
   res.json({ user: rowToUser(updated) });
 });
 
@@ -248,7 +259,7 @@ app.get("/api/match", requireAuth, (req, res) => {
   const buddyPreference = (req.query.buddyPreference ?? me.buddyPreference ?? "any").toString();
 
   let sql = `
-    SELECT id, email, nickname, major, age, gender, avatar_base, avatar_color, avatar_emoji, preference, buddy_preference, created_at, updated_at
+    SELECT id, email, nickname, major, age, gender, avatar_base, avatar_color, avatar_emoji, avatar_head, avatar_clothes, preference, buddy_preference, created_at, updated_at
     FROM users WHERE id != ? AND nickname IS NOT NULL AND nickname != ''
   `;
   const params = [me.id];
@@ -264,8 +275,105 @@ app.get("/api/match", requireAuth, (req, res) => {
   res.json({ users });
 });
 
-app.listen(PORT, () => {
+// --- Rooms (in-memory) for join-by-code and real-time sync ---
+const rooms = new Map(); // id -> { id, inviteCode, name, hostNickname, members: [{ nickname, avatar }], duration, maxMembers }
+const roomByCode = new Map(); // inviteCode -> room
+
+function generateInviteCode() {
+  return "CLD-" + String(Math.floor(1000 + Math.random() * 9000));
+}
+
+app.post("/api/rooms", (req, res) => {
+  const body = req.body || {};
+  const name = (body.name || "Study Room").toString().trim();
+  const hostNickname = (body.hostNickname || "Host").toString().trim();
+  const duration = Math.min(60, Math.max(5, parseInt(body.duration, 10) || 25));
+  const id = crypto.randomBytes(8).toString("hex");
+  let inviteCode = (body.inviteCode || generateInviteCode()).toString().toUpperCase();
+  while (roomByCode.has(inviteCode)) inviteCode = generateInviteCode();
+  const room = {
+    id,
+    inviteCode,
+    name,
+    hostNickname,
+    members: [],
+    duration,
+    maxMembers: 5,
+  };
+  rooms.set(id, room);
+  roomByCode.set(inviteCode, room);
+  res.status(201).json({ room: { ...room, timeLeft: duration, hostNickname: room.hostNickname } });
+});
+
+app.get("/api/rooms/by-code/:code", (req, res) => {
+  const code = (req.params.code || "").toString().toUpperCase().replace(/\s/g, "");
+  const room = roomByCode.get(code);
+  if (!room) return res.status(404).json({ error: "Room not found. Check the code and try again." });
+  res.json({ room: { ...room, timeLeft: room.duration, hostNickname: room.hostNickname } });
+});
+
+app.post("/api/rooms/:id/join", (req, res) => {
+  const id = req.params.id;
+  const room = rooms.get(id);
+  if (!room) return res.status(404).json({ error: "Room not found." });
+  const body = req.body || {};
+  const nickname = (body.nickname || "Anonymous").toString().trim();
+  const avatar = body.avatar || { base: "animal", color: "#B9E5FB", head: "head1", clothes: "clothes1" };
+  if (room.members.length >= room.maxMembers) return res.status(400).json({ error: "Room is full." });
+  const member = { nickname, avatar };
+  room.members.push(member);
+  res.json({ room: { ...room, timeLeft: room.duration, hostNickname: room.hostNickname }, member });
+});
+
+// --- WebSocket: room channels for Pomodoro timer + WebRTC signaling ---
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
+const wsRoomClients = new Map(); // roomId -> Set of { ws, nickname }
+
+wss.on("connection", (ws, req) => {
+  let roomId = null;
+  let nickname = "?";
+  const url = req.url || "";
+  const params = new URLSearchParams(url.startsWith("/") ? url.slice(1) : url.split("?")[1] || "");
+  roomId = params.get("roomId");
+  nickname = params.get("nickname") || "Anonymous";
+
+  if (!roomId) {
+    ws.close(1008, "roomId required");
+    return;
+  }
+  if (!wsRoomClients.has(roomId)) wsRoomClients.set(roomId, new Set());
+  const clients = wsRoomClients.get(roomId);
+  const ref = { ws, nickname };
+  clients.add(ref);
+  // Tell new joiner who else is in the room (for WebRTC)
+  const others = [...clients].filter((c) => c.ws !== ws).map((c) => c.nickname);
+  ws.send(JSON.stringify({ type: "members", members: others }));
+  // Tell others that this user joined
+  clients.forEach((c) => {
+    if (c.ws !== ws && c.ws.readyState === 1) {
+      c.ws.send(JSON.stringify({ type: "member_joined", nickname }));
+    }
+  });
+  ws.on("close", () => {
+    clients.delete(ref);
+    if (clients.size === 0) wsRoomClients.delete(roomId);
+  });
+  ws.on("message", (raw) => {
+    try {
+      const msg = JSON.parse(raw.toString());
+      msg.from = nickname;
+      clients.forEach((c) => {
+        if (c.ws !== ws && c.ws.readyState === 1) c.ws.send(JSON.stringify(msg));
+      });
+    } catch (_) {}
+  });
+});
+
+server.listen(PORT, () => {
   console.log(`StudyMate API running at http://localhost:${PORT}`);
+  console.log("WebSocket: connect with ?roomId=...&nickname=...");
   if (useGmail) console.log("Email: Gmail SMTP (sends to any .edu).");
   else if (useResend) console.warn("Email: Resend (free tier may only send to account owner). For any .edu, set GMAIL_USER and GMAIL_APP_PASSWORD in .env.");
   else console.warn("Email not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD in .env to send to any .edu (no domain required).");
