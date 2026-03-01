@@ -1,12 +1,26 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Cloudy
+![Cloudy‘s Logo](src/data/logo.PNG)
+Your Virtual-Study Sanctuary
 
-# Run and deploy your AI Studio app
+## Inspiration
 
-This contains everything you need to run your app locally.
+College students often struggle to find focused and supportive study environments. Studying alone can feel isolating, while coordinating physical group study sessions is difficult. Initially, we explored a one-to-one random matching study space inspired by platforms like ZEP and Omegle. However, after several brainstorming and discussion sessions, we shifted our focus toward subject-based study groups to better address real student needs.
 
-View your app in AI Studio: https://ai.studio/apps/d272f824-2ab9-48bf-b31f-34cd741e8980
+## What it does
+
+Cloudy is a web platform designed to help college students find flexible, low-pressure study spaces. Instead of forcing random matching, Cloudy allows users to join or create themed virtual study rooms based on shared subjects and learning goals. This helps students stay focused while also maintaining a sense of accountability and community.
+
+## How we built it
+
+We built Cloudy as a full-stack web prototype using React for the frontend and Node.js with Socket.IO for real-time communication. The user interface focuses on a calm, cloud-themed aesthetic, incorporating soft gradients and hand-drawn animal-style avatars to create a friendly and low-pressure study atmosphere.
+
+Key features include:
+- Customizable avatar creation
+- Preference-based user profile setup
+- Study lobby for browsing and hosting rooms
+- Pomodoro-style focus timer
+- Group text chat
+- Productivity tracking through study history and session statistics
 
 ## Environment variables
 
