@@ -1,6 +1,5 @@
 # Cloudy
 ![Cloudy‘s Logo](src/data/logo.PNG)
-Your Virtual-Study Sanctuary
 
 ## Inspiration
 
