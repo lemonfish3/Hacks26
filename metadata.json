@@ -1,0 +1,5 @@
+{
+  "name": "Cloudy",
+  "description": "A cozy 1-to-1 virtual study platform for students to find focus and connection in a cloud-like digital library.",
+  "requestFramePermissions": ["microphone"]
+}
