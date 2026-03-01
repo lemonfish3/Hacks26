@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { ChevronRight, CheckCircle2, BookOpen, Clock, Settings as SettingsIcon, LogOut } from 'lucide-react';
+import { ChevronRight, CheckCircle2, BookOpen, Clock } from 'lucide-react';
 import { Avatar } from '../components/Avatar';
 import { UserData } from '../types';
 
@@ -15,10 +15,9 @@ interface ProfileProps {
   toggleGoal: (id: string) => void;
   toggleTodo: (id: string) => void;
   onEditProfile: () => void;
-  onLogout: () => void;
 }
 
-export const Profile = ({ userData, onEnterLobby, toggleGoal, toggleTodo, onEditProfile, onLogout }: ProfileProps) => {
+export const Profile = ({ userData, onEnterLobby, toggleGoal, toggleTodo, onEditProfile }: ProfileProps) => {
   return (
     <motion.div 
       key="profile"
@@ -27,11 +26,12 @@ export const Profile = ({ userData, onEnterLobby, toggleGoal, toggleTodo, onEdit
       exit={{ opacity: 0, y: -20 }}
       className="z-10 w-full max-w-5xl px-4 py-8"
     >
-      <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
-        <div className="flex items-center gap-6">
+      {/* Header: avatar + name on left, Enter Lobby on right (Log out is in global nav) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-10">
+        <div className="flex items-center gap-4 min-w-0">
           <button 
             onClick={onEditProfile}
-            className="relative group transition-transform hover:scale-105 active:scale-95"
+            className="relative group transition-transform hover:scale-105 active:scale-95 flex-shrink-0"
             title="Edit Profile & Avatar"
           >
             <Avatar 
@@ -44,28 +44,22 @@ export const Profile = ({ userData, onEnterLobby, toggleGoal, toggleTodo, onEdit
               <span className="text-white text-[10px] font-bold uppercase tracking-widest">Edit</span>
             </div>
           </button>
-          <div>
-            <h2 className="text-4xl font-bold text-cloud-deep">{userData.nickname || 'Cloudy Student'}</h2>
-            <p className="text-cloud-muted font-medium">{userData.email}</p>
-            <div className="flex gap-2 mt-2">
-              <span className="px-3 py-1 bg-cloud-blue/20 rounded-full text-[10px] font-bold text-cloud-deep uppercase tracking-wider">{userData.major}</span>
+          <div className="min-w-0">
+            <h2 className="text-2xl sm:text-3xl font-bold text-cloud-deep truncate">{userData.nickname || 'Cloudy Student'}</h2>
+            <p className="text-cloud-muted font-medium text-sm truncate">{userData.email}</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <span className="px-3 py-1 bg-cloud-blue/20 rounded-full text-[10px] font-bold text-cloud-deep uppercase tracking-wider">{userData.major || 'Major'}</span>
               <span className="px-3 py-1 bg-emerald-100 rounded-full text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Active Student</span>
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-4 justify-center md:justify-end">
+        <div className="flex justify-center sm:justify-end flex-shrink-0">
           <button 
+            type="button"
             onClick={onEnterLobby}
-            className="px-8 py-3 bg-cloud-deep text-white rounded-full font-bold hover:bg-cloud-deep/90 transition-all shadow-lg flex items-center gap-2"
+            className="px-6 py-3 bg-cloud-deep text-white rounded-full font-bold hover:bg-cloud-deep/90 transition-all shadow-lg flex items-center gap-2 whitespace-nowrap"
           >
             Enter Lobby <ChevronRight className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={onLogout}
-            className="p-3 text-cloud-deep/60 rounded-full hover:text-cloud-deep hover:bg-cloud-deep/5 transition-all flex items-center justify-center"
-            title="Log Out"
-          >
-            <LogOut className="w-5 h-5" />
           </button>
         </div>
       </div>

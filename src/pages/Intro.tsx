@@ -15,22 +15,6 @@ interface IntroProps {
 export const Intro = ({ onStart, onLogin }: IntroProps) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
-      {/* Navigation Header */}
-      <nav className="fixed top-0 left-0 w-full p-6 md:p-10 flex justify-between items-center z-50">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-cloud-blue rounded-xl flex items-center justify-center shadow-sm">
-            <span className="text-white text-xl">☁️</span>
-          </div>
-          <span className="font-black text-cloud-deep tracking-tighter text-2xl hidden sm:block">Cloudy</span>
-        </div>
-        <button 
-          onClick={onLogin}
-          className="px-8 py-3 bg-white/80 backdrop-blur-md text-cloud-deep border-2 border-cloud-blue/20 rounded-full font-black text-sm uppercase tracking-widest hover:bg-white hover:border-cloud-blue hover:shadow-xl transition-all active:scale-95"
-        >
-          Log In
-        </button>
-      </nav>
-
       <motion.div 
         key="intro"
         initial={{ opacity: 0, y: 20 }}

@@ -6,15 +6,19 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, ShieldCheck, ArrowRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { sendCode, verifyCode, setToken } from '../lib/api';
+import type { ApiUser } from '../lib/api';
 
 interface AuthProps {
+  mode?: 'signin' | 'signup';
   email: string;
   setEmail: (email: string) => void;
-  onVerify: () => void;
+  onVerify: (user: ApiUser) => void;
   onBack: () => void;
 }
 
-export const Auth = ({ email, setEmail, onVerify, onBack }: AuthProps) => {
+export const Auth = ({ mode = 'signin', email, setEmail, onVerify, onBack }: AuthProps) => {
+  const isSignUp = mode === 'signup';
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -28,10 +32,14 @@ export const Auth = ({ email, setEmail, onVerify, onBack }: AuthProps) => {
     }
     setError('');
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    setStep('code');
+    try {
+      await sendCode(email);
+      setStep('code');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send code');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleVerifyCode = async (e: React.FormEvent) => {
@@ -42,10 +50,15 @@ export const Auth = ({ email, setEmail, onVerify, onBack }: AuthProps) => {
     }
     setError('');
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    onVerify();
+    try {
+      const { token, user } = await verifyCode(email, code);
+      setToken(token);
+      onVerify(user);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid or expired code');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -60,6 +73,7 @@ export const Auth = ({ email, setEmail, onVerify, onBack }: AuthProps) => {
         <div className="absolute top-0 left-0 w-full h-2 bg-cloud-blue/30" />
         
         <button 
+          type="button"
           onClick={step === 'code' ? () => setStep('email') : onBack}
           className="flex items-center gap-2 text-cloud-muted hover:text-cloud-deep font-bold transition-colors mb-8"
         >
@@ -78,8 +92,10 @@ export const Auth = ({ email, setEmail, onVerify, onBack }: AuthProps) => {
                 <div className="w-16 h-16 bg-cloud-blue/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Mail className="w-8 h-8 text-cloud-deep" />
                 </div>
-                <h2 className="text-3xl font-black text-cloud-deep mb-2">Welcome Back</h2>
-                <p className="text-cloud-muted font-medium">Enter your email to receive a login code</p>
+                <h2 className="text-3xl font-black text-cloud-deep mb-2">{isSignUp ? 'Sign Up' : 'Sign In'}</h2>
+                <p className="text-cloud-muted font-medium">
+                  {isSignUp ? 'Enter your school email to create an account and get a verification code' : 'Enter your email to receive a login code'}
+                </p>
               </div>
 
               <form onSubmit={handleSendCode} className="space-y-6">
