@@ -1,409 +1,255 @@
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Mic, MicOff, LogOut, Shuffle, MessageCircle } from "lucide-react";
-import { useStudyMate } from "@/context/StudyMateContext";
-import type { UserProfile } from "@/context/StudyMateContext";
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-const AVATARS = ["🐱", "🐻", "🐰", "🦊", "🐼", "🐸", "🦉", "🐧"];
-const REACTIONS = ["📖", "😴", "💪", "🤔", "✍️", "☕", "🎯", "😊"];
-const DURATIONS = [30, 45, 60];
+import React, { useState } from 'react';
+import { motion } from 'motion/react';
+import { 
+  Clock, RefreshCw, LogOut, User, Mic, MicOff, 
+  MessageCircle, Smile, Send, BookOpen, Settings,
+  Copy, Check, Share2, Plus
+} from 'lucide-react';
+import { Avatar } from '../components/Avatar';
+import { UserData, Room } from '../types';
 
-/** Mock pool of potential study buddies with gender for preference-based matching */
-const MOCK_PARTNERS: { name: string; avatar: string; gender: UserProfile["gender"] }[] = [
-  { name: "Jordan", avatar: "🐱", gender: "female" },
-  { name: "Sam", avatar: "🐻", gender: "male" },
-  { name: "Alex", avatar: "🐰", gender: "non_binary" },
-  { name: "Riley", avatar: "🦊", gender: "female" },
-  { name: "Casey", avatar: "🐼", gender: "male" },
-  { name: "Morgan", avatar: "🐸", gender: "female" },
-  { name: "Quinn", avatar: "🦉", gender: "male" },
-  { name: "Avery", avatar: "🐧", gender: "female" },
-];
-
-function pickPartnerByPreference(preference: UserProfile["preferences"]["buddyGender"]) {
-  const filtered =
-    preference === "any"
-      ? MOCK_PARTNERS
-      : MOCK_PARTNERS.filter((p) => p.gender === preference);
-  const pool = filtered.length > 0 ? filtered : MOCK_PARTNERS;
-  return pool[Math.floor(Math.random() * pool.length)]!;
+interface StudyRoomProps {
+  userData: UserData;
+  room: Room;
+  timeLeft: number;
+  formatTime: (s: number) => string;
+  isMuted: boolean;
+  setIsMuted: (m: boolean) => void;
+  reaction: string;
+  setReaction: (r: string) => void;
+  messages: { sender: string, text: string }[];
+  inputText: string;
+  setInputText: (t: string) => void;
+  onSendMessage: (e: React.FormEvent) => void;
+  toggleTodo: (id: string) => void;
+  onSwitchPartner: () => void;
+  onEndSession: () => void;
 }
 
-const StudyRoom = () => {
-  const { profile } = useStudyMate();
-  const [sessionStarted, setSessionStarted] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState(30);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [isMuted, setIsMuted] = useState(true);
-  const [myAvatar, setMyAvatar] = useState("🐱");
-  const [partner, setPartner] = useState<{ name: string; avatar: string } | null>(null);
-  const [myReaction, setMyReaction] = useState("📖");
-  const [partnerReaction] = useState("✍️");
-  const [showReactions, setShowReactions] = useState(false);
-  const [showChat, setShowChat] = useState(false);
-  const [isMatching, setIsMatching] = useState(false);
+export const StudyRoom = ({
+  userData,
+  room,
+  timeLeft,
+  formatTime,
+  isMuted,
+  setIsMuted,
+  reaction,
+  setReaction,
+  messages,
+  inputText,
+  setInputText,
+  onSendMessage,
+  toggleTodo,
+  onSwitchPartner,
+  onEndSession
+}: StudyRoomProps) => {
+  const [copied, setCopied] = useState(false);
+  const [roomColor, setRoomColor] = useState('#f8fafc'); // Default bg color
+  const [showSettings, setShowSettings] = useState(false);
 
-  const startSession = useCallback(() => {
-    if (!profile) return;
-    setIsMatching(true);
-    setPartner(null);
-    setTimeout(() => {
-      const matched = pickPartnerByPreference(profile.preferences.buddyGender);
-      setPartner({ name: matched.name, avatar: matched.avatar });
-      setIsMatching(false);
-      setSessionStarted(true);
-      setTimeLeft(selectedDuration * 60);
-    }, 2500);
-  }, [selectedDuration, profile]);
-
-  const endSession = () => {
-    setSessionStarted(false);
-    setTimeLeft(0);
+  const copyInviteCode = () => {
+    const code = room.inviteCode || 'CLD-5521';
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  useEffect(() => {
-    if (!sessionStarted || timeLeft <= 0) return;
-    const interval = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-    return () => clearInterval(interval);
-  }, [sessionStarted, timeLeft]);
+  const colors = ['#f8fafc', '#f0f9ff', '#f5f3ff', '#fff7ed', '#f0fdf4'];
 
-  const formatTime = (s: number) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
-  };
-
-  const progress = sessionStarted ? 1 - timeLeft / (selectedDuration * 60) : 0;
-
-  // Matching screen
-  if (isMatching) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6">
-        <motion.div
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ repeat: Infinity, duration: 1.5 }}
-          className="text-6xl"
-        >
-          ☁️
-        </motion.div>
-        <p className="text-lg font-semibold text-foreground">Finding your study buddy...</p>
-        <div className="flex gap-2">
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              className="w-3 h-3 rounded-full bg-sky-deep"
-              animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ repeat: Infinity, duration: 1, delay: i * 0.3 }}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Pre-session: pick avatar & duration
-  if (!sessionStarted) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        {/* Nav */}
-        <nav className="flex items-center justify-between px-6 py-5">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="text-2xl">☁️</span>
-            <span className="text-xl font-bold text-foreground">StudyMate</span>
-          </Link>
-        </nav>
-
-        <div className="flex-1 flex flex-col items-center justify-center px-6 pb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-md"
-          >
-            <h1 className="text-2xl font-bold text-foreground text-center mb-8">
-              Ready to study? ✨
-            </h1>
-
-            {/* Avatar picker */}
-            <div className="bg-card rounded-2xl p-6 border border-border cloud-shadow mb-6">
-              <p className="text-sm font-semibold text-foreground mb-3">Choose your avatar</p>
-              <div className="grid grid-cols-4 gap-3">
-                {AVATARS.map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => setMyAvatar(a)}
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all ${
-                      myAvatar === a
-                        ? "bg-accent ring-2 ring-primary scale-110"
-                        : "bg-secondary hover:bg-accent"
-                    }`}
-                  >
-                    {a}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Duration picker */}
-            <div className="bg-card rounded-2xl p-6 border border-border cloud-shadow mb-8">
-              <p className="text-sm font-semibold text-foreground mb-3">Session duration</p>
-              <div className="flex gap-3">
-                {DURATIONS.map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setSelectedDuration(d)}
-                    className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
-                      selectedDuration === d
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-secondary-foreground hover:bg-accent"
-                    }`}
-                  >
-                    {d} min
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button
-              onClick={startSession}
-              className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-bold text-base hover:opacity-90 transition-opacity cloud-shadow"
-            >
-              Find Study Partner 🔍
-            </button>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
-
-  // Active session
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 md:px-6 py-4">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="text-xl">☁️</span>
-          <span className="text-lg font-bold text-foreground">StudyMate</span>
-        </Link>
-
-        {/* Timer */}
-        <div className="flex items-center gap-3">
-          <div className="relative w-12 h-12">
-            <svg className="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
-              <circle cx="24" cy="24" r="20" fill="none" stroke="hsl(var(--border))" strokeWidth="3" />
-              <circle
-                cx="24"
-                cy="24"
-                r="20"
-                fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 20}`}
-                strokeDashoffset={`${2 * Math.PI * 20 * (1 - progress)}`}
-                className="transition-all duration-1000"
-              />
-            </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-foreground">
-              {formatTime(timeLeft)}
-            </span>
+    <motion.div 
+      key="study"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="z-10 w-full h-full max-w-7xl flex flex-col md:flex-row gap-6 items-stretch p-4"
+      style={{ backgroundColor: roomColor + '80' }} // Semi-transparent overlay
+    >
+      {/* Main Study Space */}
+      <div className="flex-1 glass-card p-8 flex flex-col relative overflow-hidden">
+        {/* Top Bar */}
+        <div className="flex items-center justify-between mb-8 z-10">
+          <div className="flex items-center gap-4">
+            <div className="bg-white/80 px-6 py-3 rounded-full shadow-sm flex items-center gap-3">
+              <Clock className="w-5 h-5 text-cloud-deep" />
+              <span className="text-2xl font-display font-bold tabular-nums">{formatTime(timeLeft)}</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/50 rounded-full text-xs font-bold text-cloud-deep shadow-sm">
+              <Share2 className="w-3 h-3" />
+              <span>Invite: {room.inviteCode || 'CLD-5521'}</span>
+              <button onClick={copyInviteCode} className="hover:text-cloud-blue transition-colors">
+                {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+              </button>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-3 bg-white/80 rounded-full hover:bg-white transition-colors shadow-sm"
+              title="Room Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={onEndSession}
+              className="p-3 bg-cloud-deep text-white rounded-full hover:bg-cloud-deep/90 transition-colors shadow-sm"
+              title="End Session"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={endSession}
-            className="p-2.5 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-            title="End Session"
+        {/* Room Settings Overlay */}
+        {showSettings && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute top-24 right-8 z-20 glass-card p-4 shadow-xl border border-cloud-blue/20"
           >
-            <LogOut size={18} />
-          </button>
-        </div>
-      </div>
-
-      {/* Main study space */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-8">
-        <div className="flex items-center gap-8 md:gap-20">
-          {/* My avatar */}
-          <motion.div
-            className="flex flex-col items-center gap-3"
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <div className="relative">
-              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-card border-2 border-border flex items-center justify-center text-5xl md:text-6xl cloud-shadow breathing">
-                {myAvatar}
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-sm">
-                {myReaction}
-              </div>
-              {!isMuted && (
-                <motion.div
-                  className="absolute -top-1 -left-1 w-6 h-6 rounded-full bg-accent flex items-center justify-center"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ repeat: Infinity, duration: 1 }}
-                >
-                  <Mic size={12} className="text-accent-foreground" />
-                </motion.div>
-              )}
-            </div>
-            <span className="text-sm font-semibold text-foreground">You</span>
-          </motion.div>
-
-          {/* Connection */}
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex gap-1.5">
-              {[0, 1, 2].map((i) => (
-                <motion.div
-                  key={i}
-                  className="w-2 h-2 rounded-full bg-sky-deep"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.3 }}
+            <h4 className="text-xs font-bold uppercase tracking-widest mb-3 text-cloud-deep">Room Background</h4>
+            <div className="flex gap-2">
+              {colors.map(c => (
+                <button 
+                  key={c}
+                  onClick={() => setRoomColor(c)}
+                  className={`w-6 h-6 rounded-full border-2 ${roomColor === c ? 'border-cloud-deep' : 'border-white'}`}
+                  style={{ backgroundColor: c }}
                 />
               ))}
             </div>
-            <span className="text-[10px] text-muted-foreground font-medium">studying together</span>
+          </motion.div>
+        )}
+
+        {/* Avatars Area - Grid for up to 5 users */}
+        <div className="flex-1 flex flex-wrap items-center justify-center gap-12 relative p-8">
+          {/* Current User */}
+          <div className="text-center">
+            <Avatar 
+              type={userData.avatar.base} 
+              color={userData.avatar.color} 
+              emoji={userData.avatar.emoji}
+              reaction={reaction} 
+              size="md" 
+            />
+            <p className="mt-4 font-bold text-sm">{userData.nickname || 'You'}</p>
+            <span className="text-[10px] bg-cloud-blue/30 px-2 py-1 rounded-full text-cloud-deep font-bold">Host</span>
           </div>
 
-          {/* Partner avatar */}
-          <motion.div
-            className="flex flex-col items-center gap-3"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <div className="relative">
-              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-card border-2 border-border flex items-center justify-center text-5xl md:text-6xl cloud-shadow breathing" style={{ animationDelay: "1.5s" }}>
-                {partner?.avatar ?? "🐻"}
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-sm">
-                {partnerReaction}
-              </div>
+          {/* Other Members */}
+          {room.members.map((member, i) => (
+            <div key={i} className="text-center">
+              <Avatar 
+                type={member.avatar.base} 
+                color={member.avatar.color} 
+                emoji={member.avatar.emoji}
+                reaction="idle" 
+                size="md" 
+              />
+              <p className="mt-4 font-bold text-sm">{member.nickname}</p>
+              <span className="text-[10px] bg-cloud-blue/30 px-2 py-1 rounded-full text-cloud-deep font-bold">Studying</span>
             </div>
-            <span className="text-sm font-semibold text-foreground">
-              {partner?.name ?? "Study Buddy"}
-            </span>
-          </motion.div>
+          ))}
+
+          {/* Empty Slots */}
+          {Array.from({ length: Math.max(0, 4 - room.members.length) }).map((_, i) => (
+            <div key={`empty-${i}`} className="text-center opacity-20">
+              <div className="w-24 h-24 border-2 border-dashed border-cloud-blue rounded-[40%] flex items-center justify-center">
+                <Plus className="w-6 h-6 text-cloud-blue" />
+              </div>
+              <p className="mt-4 font-bold text-sm text-cloud-muted">Empty Slot</p>
+            </div>
+          ))}
         </div>
 
-        {/* Time remaining large */}
-        <div className="text-center">
-          <p className="text-4xl md:text-5xl font-extrabold text-foreground tracking-tight">
-            {formatTime(timeLeft)}
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">remaining</p>
-        </div>
-      </div>
-
-      {/* Bottom controls */}
-      <div className="px-4 pb-6">
-        {/* Reaction picker */}
-        <AnimatePresence>
-          {showReactions && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="flex justify-center gap-2 mb-4"
+        {/* Bottom Controls */}
+        <div className="mt-8 flex items-center justify-between z-10">
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setIsMuted(!isMuted)}
+              className={`p-4 rounded-2xl transition-all flex items-center gap-2 ${isMuted ? 'bg-cloud-muted/20 text-cloud-muted' : 'bg-cloud-deep text-white shadow-lg'}`}
             >
-              <div className="bg-card rounded-2xl p-3 border border-border cloud-shadow flex gap-2">
-                {REACTIONS.map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => {
-                      setMyReaction(r);
-                      setShowReactions(false);
-                    }}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all hover:scale-110 ${
-                      myReaction === r ? "bg-accent" : "hover:bg-secondary"
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Chat panel */}
-        <AnimatePresence>
-          {showChat && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="max-w-md mx-auto mb-4 bg-card rounded-2xl p-4 border border-border cloud-shadow"
-            >
-              <div className="h-32 flex items-center justify-center text-sm text-muted-foreground">
-                Chat messages will appear here ☁️
-              </div>
-              <div className="flex gap-2 mt-2">
-                <input
-                  className="flex-1 px-4 py-2 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
-                  placeholder="Say hi..."
-                />
-                <button className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
-                  Send
+              {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+              <span className="font-bold">{isMuted ? 'Muted' : 'Speaking'}</span>
+            </button>
+            <div className="flex bg-white/50 p-2 rounded-2xl gap-2">
+              {['idle', 'happy', 'focus'].map(r => (
+                <button 
+                  key={r}
+                  onClick={() => setReaction(r)}
+                  className={`p-2 rounded-xl transition-all ${reaction === r ? 'bg-cloud-blue/30 text-cloud-deep' : 'text-cloud-muted hover:bg-white/50'}`}
+                >
+                  <Smile className="w-6 h-6" />
                 </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Controls bar */}
-        <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={() => setIsMuted(!isMuted)}
-            className={`p-3.5 rounded-2xl transition-all ${
-              isMuted
-                ? "bg-secondary text-secondary-foreground"
-                : "bg-primary text-primary-foreground"
-            }`}
-            title={isMuted ? "Unmute" : "Mute"}
-          >
-            {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
-          </button>
-
-          <button
-            onClick={() => {
-              setShowReactions(!showReactions);
-              setShowChat(false);
-            }}
-            className={`p-3.5 rounded-2xl transition-all ${
-              showReactions ? "bg-accent text-accent-foreground" : "bg-secondary text-secondary-foreground"
-            }`}
-            title="Reactions"
-          >
-            <span className="text-lg">😊</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setShowChat(!showChat);
-              setShowReactions(false);
-            }}
-            className={`p-3.5 rounded-2xl transition-all ${
-              showChat ? "bg-accent text-accent-foreground" : "bg-secondary text-secondary-foreground"
-            }`}
-            title="Chat"
-          >
-            <MessageCircle size={20} />
-          </button>
-
-          <button
-            onClick={() => {
-              endSession();
-              setTimeout(startSession, 100);
-            }}
-            className="p-3.5 rounded-2xl bg-secondary text-secondary-foreground hover:bg-accent transition-colors"
-            title="Switch Partner"
-          >
-            <Shuffle size={20} />
-          </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4 text-cloud-muted text-sm font-bold">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              {room.members.length + 1} Users Online
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Side Panel (Tasks & Chat) */}
+      <div className="w-full md:w-80 flex flex-col gap-6">
+        {/* Tasks Panel */}
+        <div className="glass-card p-6 flex-1 flex flex-col">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <BookOpen className="w-5 h-5" /> Session Tasks
+          </h3>
+          <div className="space-y-3 overflow-y-auto flex-1 pr-2">
+            {userData.todos.map(todo => (
+              <button 
+                key={todo.id}
+                onClick={() => toggleTodo(todo.id)}
+                className="w-full p-3 rounded-xl bg-white/30 flex items-center gap-3 text-left hover:bg-white/50 transition-all group"
+              >
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${todo.completed ? 'bg-cloud-deep border-cloud-deep' : 'border-cloud-blue'}`}>
+                  {todo.completed && <Send className="w-3 h-3 text-white" />}
+                </div>
+                <span className={`text-sm ${todo.completed ? 'line-through text-cloud-muted' : 'font-medium'}`}>{todo.text}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Chat Panel */}
+        <div className="glass-card p-6 h-80 flex flex-col">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <MessageCircle className="w-5 h-5" /> Group Chat
+          </h3>
+          <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex flex-col ${msg.sender === 'me' ? 'items-end' : 'items-start'}`}>
+                <div className="text-[10px] text-cloud-muted mb-1 px-1">{msg.sender === 'me' ? 'You' : msg.sender}</div>
+                <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.sender === 'me' ? 'bg-cloud-deep text-white rounded-tr-none' : 'bg-white text-cloud-deep rounded-tl-none'}`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+          <form onSubmit={onSendMessage} className="relative">
+            <input 
+              type="text" 
+              placeholder="Message group..."
+              className="w-full pl-4 pr-12 py-3 rounded-xl bg-white/50 border-2 border-transparent focus:border-cloud-blue focus:outline-none text-sm"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+            />
+            <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-cloud-deep hover:bg-cloud-blue/20 rounded-lg transition-colors">
+              <Send className="w-4 h-4" />
+            </button>
+          </form>
+        </div>
+      </div>
+    </motion.div>
   );
 };
-
-export default StudyRoom;
